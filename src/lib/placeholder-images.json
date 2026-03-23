@@ -1,0 +1,40 @@
+{
+  "placeholderImages": [
+    {
+      "id": "minimalist-horizon-oak",
+      "description": "Minimalist wood wall clock",
+      "imageUrl": "https://picsum.photos/seed/clock1/600/600",
+      "imageHint": "minimalist clock"
+    },
+    {
+      "id": "mid-century-solaris-flare",
+      "description": "Mid-century modern sunburst clock",
+      "imageUrl": "https://picsum.photos/seed/clock2/600/600",
+      "imageHint": "mid-century clock"
+    },
+    {
+      "id": "industrial-iron-foundry",
+      "description": "Industrial loft metal gear clock",
+      "imageUrl": "https://picsum.photos/seed/clock3/600/600",
+      "imageHint": "industrial clock"
+    },
+    {
+      "id": "vintage-heritage-grand",
+      "description": "Classic grandfather clock",
+      "imageUrl": "https://picsum.photos/seed/clock4/600/600",
+      "imageHint": "vintage clock"
+    },
+    {
+      "id": "modern-nebula-glass",
+      "description": "Modern digital glass clock",
+      "imageUrl": "https://picsum.photos/seed/clock5/600/600",
+      "imageHint": "digital clock"
+    },
+    {
+      "id": "scandinavian-norden-tick",
+      "description": "Scandinavian desk clock",
+      "imageUrl": "https://picsum.photos/seed/clock6/600/600",
+      "imageHint": "desk clock"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Sophisticated Deep Blue (#354160) */
+    --primary: 224 29% 29%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Light Blue-Gray (#F1F3F6) */
+    --background: 214 15% 96%;
+    --foreground: 224 29% 20%;
+
+    /* Vibrant Clear Teal (#46c7e2) */
+    --accent: 190 74% 58%;
+    --accent-foreground: 224 29% 29%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 224 29% 20%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 29% 20%;
+    --secondary: 190 74% 96%;
+    --secondary-foreground: 224 29% 29%;
+    --muted: 214 10% 90%;
+    --muted-foreground: 224 10% 45%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 224 10% 85%;
+    --input: 224 10% 85%;
+    --ring: 190 74% 58%;
+    --radius: 1rem;
+  }
+  .dark {
+    --background: 224 29% 10%;
+    --foreground: 214 15% 96%;
+    --card: 224 29% 15%;
+    --card-foreground: 214 15% 96%;
+    --popover: 224 29% 15%;
+    --popover-foreground: 214 15% 96%;
+    --primary: 214 15% 96%;
+    --primary-foreground: 224 29% 29%;
+    --secondary: 224 29% 20%;
+    --secondary-foreground: 214 15% 96%;
+    --muted: 224 29% 20%;
+    --muted-foreground: 214 10% 70%;
+    --accent: 190 74% 58%;
+    --accent-foreground: 224 29% 15%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 214 15% 96%;
+    --border: 224 29% 25%;
+    --input: 224 29% 25%;
+    --ring: 190 74% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased selection:bg-accent/30;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-headline tracking-tight;
+  }
+}
+
+@layer components {
+  .wide-container {
+    @apply mx-auto px-6 sm:px-10 lg:px-16 max-w-[1800px];
+  }
+  
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+  
+  .expensive-shadow {
+    @apply shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)];
+  }
+}
