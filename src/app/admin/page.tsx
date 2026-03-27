@@ -143,6 +143,28 @@ export default function AdminPage() {
     toast({ title: "Salary Paid", description: "Payment status updated to Paid." });
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isEditing: boolean = false) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({ variant: "destructive", title: "Image too large", description: "Please upload a photo under 2MB for optimal performance." });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        if (isEditing && editingClock) {
+          setEditingClock({ ...editingClock, imageUrl: base64String });
+        } else {
+          setNewClock({ ...newClock, imageUrl: base64String });
+        }
+        toast({ title: "Image Uploaded", description: "Product photo successfully attached to the registry." });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handlePayAll = () => {
     if (confirm(`Disburse salaries to all ${pendingSalariesCount} pending employees for ${formatMonthYear(payrollDate)}?`)) {
       payAllEmployees();
@@ -173,6 +195,7 @@ export default function AdminPage() {
 
   const outOfStockCount = products.filter(p => p.stock <= 0).length;
   const pendingSalariesCount = employees.filter(e => e.paymentStatus === 'Pending').length;
+  const pendingVerificationCount = orders.filter(o => o.status === 'Awaiting Verification').length;
 
   if (!mounted) return null;
 
@@ -222,6 +245,11 @@ export default function AdminPage() {
               onClick={() => setActiveTab('orders')}
             >
               <ShoppingBag className="h-5 w-5" /> Orders
+              {pendingVerificationCount > 0 && (
+                <span className="ml-auto w-6 h-6 bg-accent text-accent-foreground text-[10px] flex items-center justify-center rounded-full font-bold animate-pulse shadow-lg shadow-accent/40">
+                  {pendingVerificationCount}
+                </span>
+              )}
             </Button>
             <Button 
               variant="ghost" 
@@ -342,14 +370,50 @@ export default function AdminPage() {
                             </Select>
                           </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label>Image URL (Google Photos/Drive supported)</Label>
-                          <Input 
-                            value={newClock.imageUrl} 
-                            onChange={e => setNewClock({...newClock, imageUrl: e.target.value})} 
-                            placeholder="https://..." 
-                            className="h-12"
-                          />
+                        <div className="space-y-4 pt-2 border-t mt-4">
+                          <Label className="text-accent font-bold uppercase tracking-widest text-[10px]">Artisanal Product Image</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div className="space-y-4">
+                              <div className="flex flex-col gap-2">
+                                <Label className="text-xs">Direct Device Upload</Label>
+                                <div className="relative group p-6 border-2 border-dashed border-primary/20 rounded-2xl hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    onChange={(e) => handleImageUpload(e)}
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                  />
+                                  <div className="space-y-2 pointer-events-none">
+                                    <div className="w-10 h-10 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto">
+                                      <ImageIcon className="h-5 w-5" />
+                                    </div>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Upload Original Photo</p>
+                                    <p className="text-[9px] text-muted-foreground">JPG, PNG or WEBP (Max 2MB)</p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-xs">Remote Link / URL</Label>
+                                <Input 
+                                  value={newClock.imageUrl} 
+                                  onChange={e => setNewClock({...newClock, imageUrl: e.target.value})} 
+                                  placeholder="https://imgur.com/your-clock.jpg" 
+                                  className="h-10"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="w-full aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-primary/10 flex items-center justify-center">
+                              {newClock.imageUrl ? (
+                                <img src={newClock.imageUrl} alt="Preview" className="w-full h-full object-contain" />
+                              ) : (
+                                <div className="text-center px-6">
+                                  <ImageIcon className="h-8 w-8 text-primary/20 mx-auto mb-2" />
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary/30">Photo Preview Area</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div className="space-y-2">
                           <Label>Description</Label>
@@ -444,7 +508,7 @@ export default function AdminPage() {
                           <Input type="number" value={editingClock.stock} onChange={e => setEditingClock({...editingClock, stock: parseInt(e.target.value)})} className="h-12" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Discount Price</Label>
+                          <Label>Discount Price (₹)</Label>
                           <Input 
                             type="number" 
                             value={(editingClock as any).discountPrice || ""} 
@@ -454,9 +518,50 @@ export default function AdminPage() {
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Image URL</Label>
-                        <Input value={editingClock.imageUrl} onChange={e => setEditingClock({...editingClock, imageUrl: e.target.value})} className="h-12" />
+                      <div className="space-y-4 pt-2 border-t mt-4">
+                        <Label className="text-accent font-bold uppercase tracking-widest text-[10px]">Artisanal Product Image</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                          <div className="space-y-4">
+                            <div className="flex flex-col gap-2">
+                              <Label className="text-xs">Direct Device Upload</Label>
+                              <div className="relative group p-6 border-2 border-dashed border-primary/20 rounded-2xl hover:border-accent hover:bg-accent/5 transition-all text-center">
+                                <input 
+                                  type="file" 
+                                  accept="image/*" 
+                                  onChange={(e) => handleImageUpload(e, true)}
+                                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                                />
+                                <div className="space-y-2 pointer-events-none">
+                                  <div className="w-10 h-10 rounded-full bg-accent/10 text-accent flex items-center justify-center mx-auto">
+                                    <ImageIcon className="h-5 w-5" />
+                                  </div>
+                                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Upload Original Photo</p>
+                                  <p className="text-[9px] text-muted-foreground">JPG, PNG or WEBP (Max 2MB)</p>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs">Remote Link / URL</Label>
+                              <Input 
+                                value={editingClock.imageUrl} 
+                                onChange={e => setEditingClock({...editingClock, imageUrl: e.target.value})} 
+                                placeholder="https://imgur.com/your-clock.jpg" 
+                                className="h-10"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="w-full aspect-square bg-muted rounded-2xl overflow-hidden border-2 border-primary/10 flex items-center justify-center">
+                            {editingClock.imageUrl ? (
+                              <img src={editingClock.imageUrl} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                              <div className="text-center px-6">
+                                <ImageIcon className="h-8 w-8 text-primary/20 mx-auto mb-2" />
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-primary/30">Photo Preview Area</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
@@ -532,7 +637,7 @@ export default function AdminPage() {
                           className="rounded-full h-14 px-8 gap-3 bg-green-600 hover:bg-green-700 text-white border-none shadow-xl shadow-green-100 font-bold"
                           onClick={handlePayAll}
                         >
-                          <DollarSign className="h-5 w-5" />
+                          <HandCoins className="h-5 w-5" />
                           Pay All Salaries
                         </Button>
                       )}
@@ -878,6 +983,7 @@ export default function AdminPage() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                              <SelectItem value="Awaiting Verification">Awaiting Payment Verification</SelectItem>
                               <SelectItem value="Processing">Acquisition Accepted</SelectItem>
                               <SelectItem value="Shipped">In Transit</SelectItem>
                               <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>

@@ -88,7 +88,7 @@ export default function ProfilePage() {
     if (!mounted) return "...";
     try {
       const datePart = dateStr.split(' at ')[0];
-      const orderDate = new Date(datePart); 
+      const orderDate = new Date(datePart);
       const estimate = new Date(orderDate);
       estimate.setDate(estimate.getDate() + 4);
       return estimate.toLocaleDateString('en-IN', {
@@ -104,17 +104,17 @@ export default function ProfilePage() {
   const getDaysToGo = (dateStr: string, status: string) => {
     if (!mounted) return "...";
     if (status === 'Delivered') return "Arrived";
-    
+
     try {
       const datePart = dateStr.split(' at ')[0];
-      const orderDate = new Date(datePart); 
+      const orderDate = new Date(datePart);
       const estimate = new Date(orderDate);
       estimate.setDate(estimate.getDate() + 4);
-      
+
       const now = new Date();
       const diffTime = estimate.getTime() - now.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays <= 0) return "Arriving soon";
       return `${diffDays} days to go`;
     } catch (e) {
@@ -137,18 +137,18 @@ export default function ProfilePage() {
                 <User className="h-16 w-16" />
               )}
             </div>
-            <button 
+            <button
               onClick={() => fileInputRef.current?.click()}
               className="absolute bottom-0 right-0 w-10 h-10 bg-accent text-accent-foreground rounded-full flex items-center justify-center shadow-lg hover:bg-accent/90 transition-colors border-4 border-white"
             >
               <Camera className="h-5 w-5" />
             </button>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*" 
-              onChange={handleFileChange} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
             />
           </div>
           <div>
@@ -174,9 +174,9 @@ export default function ProfilePage() {
                       </Label>
                       <div className="relative group">
                         <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                        <Input 
-                          id="displayName" 
-                          value={nameInput} 
+                        <Input
+                          id="displayName"
+                          value={nameInput}
                           onChange={(e) => setNameInput(e.target.value)}
                           placeholder="Your full name"
                           className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
@@ -189,10 +189,10 @@ export default function ProfilePage() {
                       </Label>
                       <div className="relative group">
                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                        <Input 
-                          id="email" 
+                        <Input
+                          id="email"
                           type="email"
-                          value={emailInput} 
+                          value={emailInput}
                           onChange={(e) => setEmailInput(e.target.value)}
                           placeholder="yourname@example.com"
                           className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
@@ -206,8 +206,8 @@ export default function ProfilePage() {
                       Profile Picture
                     </Label>
                     <div className="flex flex-col sm:flex-row gap-4 items-center">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => fileInputRef.current?.click()}
                         className="h-14 flex-1 w-full rounded-xl border-2 border-dashed border-muted-foreground/30 hover:border-accent hover:bg-accent/5 gap-3 transition-all"
                       >
@@ -215,8 +215,8 @@ export default function ProfilePage() {
                         <span className="font-bold">Choose from Device</span>
                       </Button>
                       {photoInput && (
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           onClick={() => setPhotoInput("")}
                           className="h-14 px-6 text-destructive hover:bg-destructive/10 rounded-xl"
                         >
@@ -235,9 +235,9 @@ export default function ProfilePage() {
                     </Label>
                     <div className="relative group">
                       <MapPin className="absolute left-4 top-6 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                      <Textarea 
-                        id="address" 
-                        value={addressInput} 
+                      <Textarea
+                        id="address"
+                        value={addressInput}
                         onChange={(e) => setAddressInput(e.target.value)}
                         placeholder="House No, Street, City, ZIP Code"
                         className="pl-12 min-h-[120px] text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
@@ -246,18 +246,18 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                    <Button 
-                      onClick={handleSave} 
+                    <Button
+                      onClick={handleSave}
                       className="flex-1 h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl shadow-accent/20 transition-transform active:scale-95"
                     >
                       <Save className="mr-2 h-5 w-5" />
                       Update Profile
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="flex-1 h-14 text-lg font-bold rounded-2xl border-destructive/20 text-destructive hover:bg-destructive/10"
                       onClick={() => {
-                        if(confirm("Are you sure you want to clear your local session? This will remove your cart and order history.")) {
+                        if (confirm("Are you sure you want to clear your local session? This will remove your cart and order history.")) {
                           localStorage.clear();
                           window.location.reload();
                         }
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                   </Button>
                 )}
               </div>
-              
+
               <Card className="border-none shadow-2xl overflow-hidden bg-white ring-1 ring-black/5">
                 <CardHeader className="bg-primary text-primary-foreground p-6 sm:p-8">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -297,11 +297,21 @@ export default function ProfilePage() {
                         {lastOrder ? lastOrder.id : "No active orders"}
                       </CardTitle>
                     </div>
-                    {lastOrder && (
-                      <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold px-4 py-1.5 rounded-full text-sm">
-                        {lastOrder.status === 'Processing' ? 'Accepted' : lastOrder.status}
-                      </Badge>
-                    )}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                      {lastOrder && (
+                        <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold px-4 py-1.5 rounded-full text-sm">
+                          {lastOrder.status === 'Processing' ? 'Accepted' : lastOrder.status}
+                        </Badge>
+                      )}
+                      {lastOrder && (
+                        <Button asChild size="sm" variant="outline" className="h-9 px-4 rounded-full border-accent text-accent hover:bg-accent/10 font-bold text-[10px] uppercase tracking-widest gap-2 bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
+                          <Link href={`/order/${lastOrder.id}/bill`}>
+                            <FileText className="h-4 w-4" />
+                            Digital Bill
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-6 sm:p-8 lg:p-10">
@@ -322,7 +332,7 @@ export default function ProfilePage() {
                             </p>
                           </div>
                         </div>
-                        
+
                         <div className="relative py-4">
                           <Progress value={getStatusProgress(lastOrder.status)} className="h-3 bg-muted rounded-full" />
                           <div className="flex justify-between mt-6">
@@ -381,7 +391,7 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div>
                           <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Package Contents</h4>
                           <div className="space-y-3">

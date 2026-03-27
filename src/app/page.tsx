@@ -6,7 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ClockCard } from "@/components/clocks/ClockCard";
 import { useStore } from "@/app/lib/store";
 import { Button } from "@/components/ui/button";
-import { Layers, Search, X, MapPin, Mail, Instagram, Facebook, Phone, Globe, ShieldCheck, User, Clock as ClockIcon, SlidersHorizontal, ArrowRight, Zap } from "lucide-react";
+import { Layers, Search, X, MapPin, Mail, Instagram, Facebook, Phone, Globe, ShieldCheck, User, Clock as ClockIcon, SlidersHorizontal, ArrowRight, Zap, Watch, AlarmClock, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
@@ -141,22 +141,22 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-1">
-        {/* Hero Section - Full Screen Editorial */}
-        <section className="relative min-h-screen flex items-center bg-[#111111] text-primary-foreground overflow-hidden py-16 md:py-24">
+        {/* Hero Section - Elevated Black Box Showcase */}
+        <section className="relative min-h-screen flex items-center bg-background text-primary overflow-hidden py-16 md:py-24">
           <div className="wide-container relative z-20 w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-center">
               <div className="max-w-3xl order-2 lg:order-1 animate-in fade-in slide-in-from-left duration-1000">
                 <div className="flex flex-col gap-6 mb-8">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs font-bold uppercase tracking-widest w-fit">
+                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-widest w-fit">
                       <Layers className="h-4 w-4" />
                       Artisanal Excellence
                     </div>
                     {mounted && userName !== "Guest" && (
-                      <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-white text-xs font-bold animate-in fade-in slide-in-from-right duration-700 w-fit">
-                        <Avatar className="h-6 w-6 border border-white/20">
+                      <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/5 backdrop-blur-md border border-primary/10 text-primary text-xs font-bold animate-in fade-in slide-in-from-right duration-700 w-fit">
+                        <Avatar className="h-6 w-6 border border-primary/10">
                           <AvatarImage src={userPhoto} alt={userName} />
-                          <AvatarFallback className="bg-white/10 text-white">
+                          <AvatarFallback className="bg-primary/10 text-primary">
                             <User className="h-3 w-3" />
                           </AvatarFallback>
                         </Avatar>
@@ -169,31 +169,34 @@ export default function Home() {
                 <h1 className="text-6xl md:text-8xl 2xl:text-9xl font-headline font-bold mb-10 leading-[1.1] tracking-tight">
                   Capturing <br /><span className="text-accent italic">Nature's Pulse.</span>
                 </h1>
-                <p className="text-xl md:text-2xl text-primary-foreground/70 mb-12 font-body max-w-2xl leading-relaxed">
+                <p className="text-xl md:text-2xl text-muted-foreground mb-12 font-body max-w-2xl leading-relaxed">
                   V-WOOD QUARTZ transforms raw timber into high-precision timepieces, merging heritage woodworking with modern quartz accuracy since 1986.
                 </p>
                 <div className="flex flex-wrap gap-6">
-                  <Button asChild size="lg" className="h-16 bg-accent hover:bg-accent/90 text-accent-foreground font-bold px-12 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 text-lg">
+                  <Button asChild size="lg" className="h-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 text-lg">
                     <Link href="#collection">Explore Collection</Link>
                   </Button>
                 </div>
               </div>
 
-              {/* Hero Image Section */}
-              <div className="relative w-full aspect-square lg:aspect-[4/5] 2xl:aspect-[3/4] order-1 lg:order-2 flex items-center justify-center animate-in fade-in zoom-in duration-1000">
-                <div className="relative w-full h-full rounded-[4rem] overflow-hidden shadow-[0_0_150px_rgba(0,0,0,0.8)] border-8 border-white/5 bg-black group transition-all duration-700 hover:border-accent/20">
-                  <img 
-                    src={storeSettings.heroImageUrl} 
-                    alt="V-WOOD QUARTZ Heritage Timepiece" 
-                    className="w-full h-full object-contain bg-[#111111] transition-transform duration-1000 group-hover:scale-110"
+              {/* Hero Image Section - Elegant "Small Frame" Gallery */}
+              <div className="relative order-1 lg:order-2 flex items-center justify-center animate-in fade-in zoom-in duration-1000">
+                <div className="relative w-full max-w-md lg:max-w-lg aspect-square bg-black rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] border-[18px] border-primary group transition-all duration-700 hover:scale-105">
+                  <img
+                    src={storeSettings.heroImageUrl}
+                    alt="V-WOOD QUARTZ Heritage"
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?auto=format&fit=crop&q=80&w=1800";
                     }}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-60" />
-                  <div className="absolute bottom-12 left-12 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <p className="text-[12px] font-bold uppercase tracking-[0.4em] text-accent mb-2">Authentic Craft</p>
-                    <p className="text-3xl font-headline font-bold text-white">The Signature Series</p>
+                  {/* Subtle Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40" />
+                  
+                  {/* Bottom Captions */}
+                  <div className="absolute bottom-8 left-8 z-30 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0 text-white">
+                    <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-accent mb-2">Original Frame</p>
+                    <p className="text-2xl font-headline font-bold">Limited Heritage</p>
                   </div>
                 </div>
               </div>
@@ -203,13 +206,47 @@ export default function Home() {
           <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] bg-accent/5 rounded-full blur-[150px] pointer-events-none" />
           <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
         </section>
+        {/* Visual Category Menu */}
+        <section className="py-12 bg-white/50 border-y border-primary/5">
+          <div className="wide-container">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12">
+              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
+                  <ClockIcon className="h-8 w-8" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Wall Clocks</span>
+              </Link>
+              
+              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
+                  <AlarmClock className="h-8 w-8" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Alarm Clocks</span>
+              </Link>
+
+              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
+                  <Watch className="h-8 w-8" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Hand Watches</span>
+              </Link>
+
+              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
+                  <ImageIcon className="h-8 w-8" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Photo Frames</span>
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* Collection Section */}
         <section id="collection" className="py-24 wide-container">
           <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between mb-20 gap-12">
             <div className="max-w-3xl w-full">
-              <h2 className="text-5xl md:text-7xl font-headline font-bold text-primary mb-6">The Collection</h2>
-              <p className="text-muted-foreground text-xl mb-10 leading-relaxed max-w-2xl">Each piece is a unique dialogue between the craftsman and the grain.</p>
+              <h2 className="v-section-heading">The Collection</h2>
+              <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl">Each piece is a unique dialogue between the craftsman and the grain.</p>
               
               <div className="flex flex-col sm:flex-row gap-4 items-center">
                 <div className="relative group flex-1 w-full max-w-xl">
@@ -280,7 +317,7 @@ export default function Home() {
                   <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent/20 text-accent text-[12px] font-bold uppercase tracking-widest border border-accent/20">
                     <MapPin className="h-4 w-4" /> Visit Showroom
                   </div>
-                  <h2 className="text-6xl md:text-7xl font-headline font-bold leading-tight">Artisanal Studio</h2>
+                  <h2 className="v-section-heading leading-tight">Artisanal Studio</h2>
                   <p className="text-xl text-primary-foreground/70 leading-relaxed font-body">
                     Step into our Morbi studio to experience the tactile warmth of natural wood and the silent precision of our movements.
                   </p>
@@ -307,13 +344,35 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-6 p-8 rounded-[2.5rem] bg-accent/10 border border-accent/20 group transition-all shadow-2xl">
-                    <div className="w-16 h-16 rounded-2xl bg-white text-accent flex items-center justify-center shrink-0 shadow-lg">
+                  <div className="flex items-start gap-6 p-8 rounded-[2.5rem] bg-accent/10 border border-accent/20 group transition-all shadow-2xl relative overflow-hidden">
+                    <div className="w-16 h-16 rounded-2xl bg-white text-accent flex items-center justify-center shrink-0 shadow-lg relative z-10">
                       <Zap className="h-8 w-8" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-accent uppercase tracking-widest mb-1">Live Store Time</p>
-                      <p className="text-3xl font-headline font-bold text-white tracking-widest">{mounted ? currentTime : "--:--:--"}</p>
+                    <div className="relative z-10">
+                      <p className="text-xs font-bold text-accent uppercase tracking-widest mb-1">Live Status</p>
+                      {mounted && (
+                        <p className={cn(
+                          "text-3xl font-headline font-bold tracking-widest",
+                          (() => {
+                            const now = new Date();
+                            const day = now.getDay();
+                            const hour = now.getHours();
+                            const isWednesday = day === 3;
+                            const isWorkingHours = hour >= 8 && hour < 18;
+                            const isOpen = isWorkingHours && !isWednesday;
+                            return isOpen ? "text-green-400" : "text-red-400";
+                          })()
+                        )}>
+                          {(() => {
+                            const now = new Date();
+                            const day = now.getDay();
+                            const hour = now.getHours();
+                            const isWednesday = day === 3;
+                            const isWorkingHours = hour >= 8 && hour < 18;
+                            return (isWorkingHours && !isWednesday) ? "Showroom Open" : "Showroom Closed";
+                          })()}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

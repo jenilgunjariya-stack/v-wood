@@ -5,53 +5,65 @@
 
 @layer base {
   :root {
-    /* Sophisticated Deep Blue (#354160) */
-    --primary: 224 29% 29%;
-    --primary-foreground: 0 0% 100%;
+    /* V-WOOD Premium Identity: Charcoal & Amber */
+    --primary: 20 10% 12%;        /* Deep Obsidian */
+    --primary-foreground: 20 10% 98%;
 
-    /* Light Blue-Gray (#F1F3F6) */
-    --background: 214 15% 96%;
-    --foreground: 224 29% 20%;
+    --background: 28 20% 98%;     /* Soft Linen/Ivory */
+    --foreground: 20 10% 10%;
 
-    /* Vibrant Clear Teal (#46c7e2) */
-    --accent: 190 74% 58%;
-    --accent-foreground: 224 29% 29%;
+    /* Artisan Amber (#D98E3A) */
+    --accent: 33 68% 54%;
+    --accent-foreground: 20 10% 98%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 29% 20%;
+    --card-foreground: 20 10% 10%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 224 29% 20%;
-    --secondary: 190 74% 96%;
-    --secondary-foreground: 224 29% 29%;
-    --muted: 214 10% 90%;
-    --muted-foreground: 224 10% 45%;
+    --popover-foreground: 20 10% 10%;
+    
+    --secondary: 33 68% 96%;
+    --secondary-foreground: 20 10% 12%;
+    
+    --muted: 28 10% 92%;
+    --muted-foreground: 20 5% 45%;
+    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 224 10% 85%;
-    --input: 224 10% 85%;
-    --ring: 190 74% 58%;
-    --radius: 1rem;
+    
+    --border: 28 10% 88%;
+    --input: 28 10% 88%;
+    --ring: 33 68% 54%;
+    --radius: 1.5rem;
   }
   .dark {
-    --background: 224 29% 10%;
-    --foreground: 214 15% 96%;
-    --card: 224 29% 15%;
-    --card-foreground: 214 15% 96%;
-    --popover: 224 29% 15%;
-    --popover-foreground: 214 15% 96%;
-    --primary: 214 15% 96%;
-    --primary-foreground: 224 29% 29%;
-    --secondary: 224 29% 20%;
-    --secondary-foreground: 214 15% 96%;
-    --muted: 224 29% 20%;
-    --muted-foreground: 214 10% 70%;
-    --accent: 190 74% 58%;
-    --accent-foreground: 224 29% 15%;
+    --background: 20 10% 4%;
+    --foreground: 28 20% 98%;
+    
+    --card: 20 10% 8%;
+    --card-foreground: 28 20% 98%;
+    
+    --popover: 20 10% 8%;
+    --popover-foreground: 28 20% 98%;
+    
+    --primary: 28 20% 98%;
+    --primary-foreground: 20 10% 12%;
+    
+    --secondary: 20 10% 15%;
+    --secondary-foreground: 28 20% 98%;
+    
+    --muted: 20 10% 15%;
+    --muted-foreground: 28 10% 70%;
+    
+    --accent: 33 68% 54%;
+    --accent-foreground: 20 10% 4%;
+    
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 214 15% 96%;
-    --border: 224 29% 25%;
-    --input: 224 29% 25%;
-    --ring: 190 74% 58%;
+    --destructive-foreground: 28 20% 98%;
+    
+    --border: 20 10% 18%;
+    --input: 20 10% 18%;
+    --ring: 33 68% 54%;
   }
 }
 
@@ -73,10 +85,27 @@
   }
   
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+    @apply bg-white/70 dark:bg-black/50 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-xl;
   }
   
   .expensive-shadow {
-    @apply shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)];
+    @apply shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)];
+  }
+
+  /* V-WOOD Custom UI Elements */
+  .v-card {
+    @apply bg-card text-card-foreground border border-border shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2.5rem] overflow-hidden;
+  }
+
+  .v-input {
+    @apply h-14 rounded-2xl border-2 border-border focus:border-accent focus:bg-white dark:focus:bg-black transition-all text-lg shadow-sm bg-muted/10;
+  }
+
+  .v-button-primary {
+    @apply h-14 px-8 rounded-2xl bg-accent hover:bg-accent/90 text-accent-foreground font-bold shadow-xl shadow-accent/20 transition-all active:scale-95;
+  }
+
+  .v-section-heading {
+    @apply text-5xl md:text-7xl font-headline font-bold text-primary mb-6;
   }
 }

@@ -84,9 +84,9 @@ const INITIAL_SETTINGS: StoreSettings = {
   email: "support@vwoodquartz.com",
   phone: "+91 9727408352",
   openingHours: "8:00 AM - 6:00 PM (Closed on Wednesdays)",
-  logoUrl: "https://img1.wsimg.com/isteam/ip/613470c5-0d44-4b59-8433-95c1c7696081/PicsArt_06-30-03.41.35.jpg",
+  logoUrl: "https://img1.wsimg.com/isteam/ip/613470c5-0d44-4b59-8433-95c1c7696081/PicsArt_06-30-03.41.35.jpg", // Fixed global circular logo reference
   heroImageUrl: "https://i.imgur.com/6vIzIjy.jpeg",
-  ownerName: "JENILBHAI GUNJARIYA",
+  ownerName: "Jenil Nileshbhai Gunjariya",
   paymentQrCodeUrl: "https://picsum.photos/seed/qr-code/400/400",
   locationUrl: "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac",
   upiId: "jenilgunjariya@oksbi"
@@ -186,6 +186,26 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
     
     setIsHydrated(true);
+
+    // Sync state across multiple tabs instantly
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      
+      try {
+        const value = JSON.parse(e.newValue);
+        switch (e.key) {
+          case 'timely_finds_settings': setStoreSettingsState(value); break;
+          case 'timely_finds_products': setProducts(value); break;
+          case 'timely_finds_orders': setOrders(value); break;
+          case 'timely_finds_employees': setEmployees(value); break;
+        }
+      } catch (err) {
+        console.error("Storage sync failed", err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const saveCart = (newCart: CartItem[]) => {

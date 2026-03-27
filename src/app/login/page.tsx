@@ -99,7 +99,7 @@ export default function LoginPage() {
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
                     <Input 
                       id="name" 
-                      placeholder="e.g. Rajesh Kumar" 
+                      placeholder="Full Name" 
                       className="pl-12 h-14 rounded-2xl border-2 bg-white/50 focus:border-accent focus:bg-white transition-all text-lg shadow-sm"
                       value={name}
                       onChange={(e) => setName(e.target.value)}

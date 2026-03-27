@@ -19,7 +19,7 @@ export interface Order {
   date: string;
   items: CartItem[];
   total: number;
-  status: 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+  status: 'Awaiting Verification' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
   customerName: string;
   customerAddress: string;
   paymentMethod: 'Card' | 'UPI' | 'COD';

@@ -29,7 +29,7 @@ export function ClockCard({ clock }: { clock: Clock }) {
   };
 
   return (
-    <Card className="group relative overflow-hidden border-none bg-white shadow-sm hover:shadow-2xl transition-all duration-500 rounded-[2rem]">
+    <Card className="v-card group relative">
       {isOutOfStock && (
         <div className="absolute inset-0 z-30 bg-white/70 backdrop-blur-[4px] flex items-center justify-center">
           <Badge variant="destructive" className="text-xs font-bold px-6 py-2 rounded-full uppercase tracking-[0.2em] shadow-2xl">
@@ -48,15 +48,15 @@ export function ClockCard({ clock }: { clock: Clock }) {
       )}
 
       <Link href={`/product/${clock.id}`} className={isOutOfStock ? "pointer-events-none" : ""}>
-        <div className="relative aspect-square overflow-hidden bg-muted group-hover:bg-muted/50 transition-colors">
+        <div className="relative aspect-square bg-black overflow-hidden flex items-center justify-center p-8 border-[8px] border-primary shadow-2xl transition-all duration-500 group-hover:scale-[0.98] group-hover:border-accent">
           <img
             src={clock.imageUrl}
             alt={clock.name}
-            className={`w-full h-full object-cover transition-transform duration-1000 ${isOutOfStock ? 'grayscale opacity-40' : 'group-hover:scale-110'}`}
+            className={`w-full h-full object-contain transition-transform duration-700 ${isOutOfStock ? 'grayscale opacity-30 shadow-none' : 'group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(255,255,255,0.05)]'}`}
           />
-          <div className="absolute inset-0 bg-black/5 group-hover:bg-black/0 transition-colors duration-500" />
-          <div className="absolute top-5 left-5">
-            <span className="bg-primary/90 text-white px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] rounded-full backdrop-blur-md shadow-lg border border-white/10">
+          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute top-6 left-6">
+            <span className="bg-primary/90 text-white px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.3em] rounded-full backdrop-blur-md shadow-2xl border border-white/10">
               {clock.style}
             </span>
           </div>
