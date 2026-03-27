@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfilePage() {
-  const { userName, userEmail, userPhoto, userAddress, isAdmin, setUserName, setUserEmail, setUserPhoto, setUserAddress, orders } = useStore();
+  const { userName, userEmail, userPhoto, userAddress, isAdmin, setUserName, setUserEmail, setUserPhoto, setUserAddress, orders, storeSettings } = useStore();
   const [nameInput, setNameInput] = useState(userName);
   const [emailInput, setEmailInput] = useState(userEmail);
   const [photoInput, setPhotoInput] = useState(userPhoto);
@@ -393,24 +393,36 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Package Contents</h4>
-                          <div className="space-y-3">
+                          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-6">Artisanal Package Contents</h4>
+                          <div className="space-y-4">
                             {lastOrder.items.map((item, i) => (
-                              <div key={i} className="flex items-center gap-4 bg-muted/30 p-2 rounded-lg border border-muted">
-                                <div className="h-12 w-12 rounded border overflow-hidden shrink-0 bg-white">
+                              <div key={i} className="flex items-center gap-5 bg-white/50 p-3 rounded-2xl border-2 border-primary/5 hover:border-accent/30 transition-all group">
+                                <div className="h-16 w-16 rounded-xl border-4 border-white shadow-xl overflow-hidden shrink-0 bg-muted transition-transform group-hover:scale-105">
                                   <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-bold text-primary truncate">{item.name}</p>
-                                  <p className="text-[10px] text-muted-foreground">Quantity: {item.quantity}</p>
+                                  <p className="text-sm font-bold text-primary truncate leading-tight mb-1">{item.name}</p>
+                                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Qty: {item.quantity}</p>
                                 </div>
-                                <span className="text-xs font-bold text-accent">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                                <div className="text-right">
+                                  <span className="text-xs font-bold text-accent block">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                                  <span className="text-[9px] text-muted-foreground italic">Item Total</span>
+                                </div>
                               </div>
                             ))}
                           </div>
-                          <div className="mt-4 pt-4 border-t border-dashed flex justify-between items-center">
-                            <span className="text-xs font-bold text-muted-foreground uppercase">Total Paid</span>
-                            <span className="text-lg font-bold text-primary">₹{lastOrder.total.toLocaleString('en-IN')}</span>
+                          
+                          <div className="mt-8 p-6 bg-primary/5 rounded-[2rem] border-2 border-dashed border-primary/10 flex justify-between items-center">
+                            <div>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Verified Payment</p>
+                                <span className="text-2xl font-bold text-primary">₹{lastOrder.total.toLocaleString('en-IN')}</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <div className="relative h-12 w-12 grayscale opacity-40">
+                                    <img src={storeSettings.logoUrl} alt="V-WOOD Seal" className="w-full h-full object-contain" />
+                                </div>
+                                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.3em] mt-1">Verified Studio Piece</p>
+                            </div>
                           </div>
                         </div>
                       </div>

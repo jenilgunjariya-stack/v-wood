@@ -1038,6 +1038,17 @@ export default function AdminPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-3">
+                      <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Studio Hours (Closed Days)</Label>
+                      <Input value={tempSettings.openingHours} onChange={e => setTempSettings({...tempSettings, openingHours: e.target.value})} className="h-12 rounded-xl" placeholder="e.g. 8:00 AM - 6:00 PM (Closed on Wednesdays)" />
+                    </div>
+                    <div className="space-y-3">
+                      <Label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">Local Map URL (Google Maps)</Label>
+                      <Input value={tempSettings.locationUrl} onChange={e => setTempSettings({...tempSettings, locationUrl: e.target.value})} className="h-12 rounded-xl" placeholder="https://maps.app.goo.gl/..." />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
                       <Label className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
                         <ImageIcon className="h-4 w-4" />
                         Master Logo URL

@@ -8,6 +8,9 @@ export interface Clock {
   imageUrl: string;
   specifications: string[];
   stock: number;
+  shape?: string;
+  color?: string;
+  discountPrice?: number;
 }
 
 export interface CartItem extends Clock {
