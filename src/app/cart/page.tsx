@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { useStore } from "@/app/lib/store";
 import { Button } from "@/components/ui/button";
-import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react";
+import { Trash2, Plus, Minus, ArrowRight, ShoppingBag, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -110,6 +110,23 @@ export default function CartPage() {
                   <span>₹{total.toLocaleString('en-IN')}</span>
                 </div>
               </div>
+
+              <div className="mb-6 p-5 rounded-[2rem] bg-accent/5 border-2 border-accent/10 flex items-center gap-4 transition-all hover:border-accent">
+                <div className="h-10 w-10 rounded-xl bg-accent text-accent-foreground flex items-center justify-center shadow-md">
+                  <Truck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Expected Arrival</p>
+                  <p className="text-sm font-bold text-primary leading-none">
+                    {new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { 
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'short'
+                    })}
+                  </p>
+                </div>
+              </div>
+
 
               <Button asChild size="lg" className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-bold">
                 <Link href="/checkout">

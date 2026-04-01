@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Sparkles, History, Loader2, ArrowRight, Home as HomeIcon } from "lucide-react";
 import { aiStyleAssistant, AIStyleAssistantOutput } from "@/ai/flows/ai-style-assistant";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 export default function AssistantPage() {
   const [description, setDescription] = useState("");

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert } from "lucide-react";
+import { User, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert, Heart } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,12 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfilePage() {
-  const { userName, userEmail, userPhoto, userAddress, isAdmin, setUserName, setUserEmail, setUserPhoto, setUserAddress, orders, storeSettings } = useStore();
+  const { userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, orders, favorites, storeSettings, logout } = useStore();
   const [nameInput, setNameInput] = useState(userName);
   const [emailInput, setEmailInput] = useState(userEmail);
   const [photoInput, setPhotoInput] = useState(userPhoto);
   const [addressInput, setAddressInput] = useState(userAddress);
+  const [bankNameInput, setBankNameInput] = useState(userBankName);
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,7 +31,8 @@ export default function ProfilePage() {
     setEmailInput(userEmail);
     setPhotoInput(userPhoto);
     setAddressInput(userAddress);
-  }, [userName, userEmail, userPhoto, userAddress]);
+    setBankNameInput(userBankName);
+  }, [userName, userEmail, userPhoto, userAddress, userBankName]);
 
   const lastOrder = orders.length > 0 ? orders[0] : null;
 
@@ -68,6 +70,7 @@ export default function ProfilePage() {
     setUserEmail(emailInput);
     setUserPhoto(photoInput);
     setUserAddress(addressInput);
+    setUserBankName(bankNameInput);
     toast({
       title: "Profile Updated",
       description: "Your information has been saved successfully.",
@@ -245,6 +248,22 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
+                  <div className="space-y-3">
+                    <Label htmlFor="bankName" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Linked Bank Name (for GPay/UPI)
+                    </Label>
+                    <div className="relative group">
+                      <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                      <Input
+                        id="bankName"
+                        value={bankNameInput}
+                        onChange={(e) => setBankNameInput(e.target.value)}
+                        placeholder="e.g. State Bank of India"
+                        className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex flex-col sm:flex-row gap-4 pt-4">
                     <Button
                       onClick={handleSave}
@@ -258,8 +277,9 @@ export default function ProfilePage() {
                       className="flex-1 h-14 text-lg font-bold rounded-2xl border-destructive/20 text-destructive hover:bg-destructive/10"
                       onClick={() => {
                         if (confirm("Are you sure you want to clear your local session? This will remove your cart and order history.")) {
+                          logout();
                           localStorage.clear();
-                          window.location.reload();
+                          window.location.href = "/login";
                         }
                       }}
                     >
@@ -278,14 +298,22 @@ export default function ProfilePage() {
                   <Truck className="h-6 w-6 text-accent" />
                   Active Order Tracking
                 </h2>
-                {lastOrder && (
-                  <Button asChild variant="outline" size="sm" className="rounded-full gap-2 border-accent text-accent hover:bg-accent/10">
-                    <Link href={`/order/${lastOrder.id}/bill`}>
-                      <FileText className="h-4 w-4" />
-                      View Bill
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button asChild variant="outline" size="sm" className="rounded-full gap-2 border-primary/20 text-primary hover:bg-primary/5 font-bold uppercase tracking-widest text-[10px]">
+                    <Link href="/orders">
+                      <ShoppingBag className="h-4 w-4" />
+                      All Orders
                     </Link>
                   </Button>
-                )}
+                  {lastOrder && (
+                    <Button asChild variant="outline" size="sm" className="rounded-full gap-2 border-accent text-accent hover:bg-accent/10 font-bold uppercase tracking-widest text-[10px]">
+                      <Link href={`/order/${lastOrder.id}/bill`}>
+                        <FileText className="h-4 w-4" />
+                        Latest Bill
+                      </Link>
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <Card className="border-none shadow-2xl overflow-hidden bg-white ring-1 ring-black/5">
@@ -325,7 +353,9 @@ export default function ProfilePage() {
                             <p className="text-xl font-bold text-primary">{lastOrder.status}</p>
                           </div>
                           <div className="text-right">
-                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Estimated Arrival</p>
+                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                              {lastOrder.status === 'Delivered' ? 'Final Status' : 'Estimated Arrival'}
+                            </p>
                             <p className="text-xl font-bold text-accent flex items-center justify-end gap-2">
                               <Clock className="h-5 w-5" />
                               {getDaysToGo(lastOrder.date, lastOrder.status)}
@@ -411,17 +441,17 @@ export default function ProfilePage() {
                               </div>
                             ))}
                           </div>
-                          
+
                           <div className="mt-8 p-6 bg-primary/5 rounded-[2rem] border-2 border-dashed border-primary/10 flex justify-between items-center">
                             <div>
-                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Verified Payment</p>
-                                <span className="text-2xl font-bold text-primary">₹{lastOrder.total.toLocaleString('en-IN')}</span>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Verified Payment</p>
+                              <span className="text-2xl font-bold text-primary">₹{lastOrder.total.toLocaleString('en-IN')}</span>
                             </div>
                             <div className="flex flex-col items-center">
-                                <div className="relative h-12 w-12 grayscale opacity-40">
-                                    <img src={storeSettings.logoUrl} alt="V-WOOD Seal" className="w-full h-full object-contain" />
-                                </div>
-                                <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.3em] mt-1">Verified Studio Piece</p>
+                              <div className="relative h-12 w-12 grayscale opacity-40">
+                                <img src={storeSettings.logoUrl} alt="V-WOOD Seal" className="w-full h-full object-contain" />
+                              </div>
+                              <p className="text-[7px] font-bold text-muted-foreground uppercase tracking-[0.3em] mt-1">Verified Studio Piece</p>
                             </div>
                           </div>
                         </div>
@@ -448,50 +478,27 @@ export default function ProfilePage() {
 
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-8">
-            {isAdmin ? (
-              <Card className="border-none shadow-2xl overflow-hidden bg-primary text-primary-foreground sticky top-28">
-                <div className="h-2 bg-accent" />
-                <CardHeader className="pt-8 px-8">
-                  <div className="flex items-center gap-3 text-accent font-bold mb-2">
-                    <ShieldCheck className="h-6 w-6" />
-                    <span className="uppercase tracking-widest text-xs">Admin Status</span>
-                  </div>
-                  <CardTitle className="font-headline text-2xl">Store Manager</CardTitle>
-                </CardHeader>
-                <CardContent className="p-8 pt-0 space-y-8">
-                  <p className="text-primary-foreground/70 text-sm leading-relaxed">
-                    You have administrative access to the V-WOOD QUARTZ catalog. Manage products, update order statuses, and adjust store settings from your dashboard.
-                  </p>
-                  <Button asChild size="lg" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold h-14 rounded-xl shadow-xl shadow-accent/20">
-                    <Link href="/admin">
-                      <Settings className="mr-2 h-5 w-5" />
-                      Enter Dashboard
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="border-none shadow-2xl overflow-hidden bg-white border-t-4 border-t-accent sticky top-28">
-                <CardHeader className="p-8">
-                  <div className="flex items-center gap-3 text-accent font-bold mb-2">
-                    <ShoppingBag className="h-6 w-6" />
-                    <span className="uppercase tracking-widest text-xs">Member Status</span>
-                  </div>
-                  <CardTitle className="font-headline text-2xl">Artisanal Collector</CardTitle>
-                </CardHeader>
-                <CardContent className="p-8 pt-0">
-                  <p className="text-muted-foreground text-sm leading-relaxed">
-                    As a valued customer, you can track all your handcrafted timepieces here. We preserve your order history locally for your privacy.
-                  </p>
-                  <div className="mt-8 pt-8 border-t border-dashed">
-                    <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 italic">Privacy Focus</h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                      Your data is stored securely in your browser's local cache. No personal information is transmitted to our servers until you proceed to a verified checkout.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
+            <Card className="border-none shadow-2xl overflow-hidden bg-white border-t-4 border-t-red-500">
+              <CardHeader className="p-8 pb-4">
+                <div className="flex items-center gap-3 text-red-500 font-bold mb-2">
+                  <Heart className="h-6 w-6 fill-red-500" />
+                  <span className="uppercase tracking-widest text-xs">My Collection</span>
+                </div>
+                <CardTitle className="font-headline text-2xl">Your Favorites</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 pt-0">
+                <p className="text-muted-foreground text-sm leading-relaxed mb-6">
+                  You have saved {favorites.length} handcrafted timepieces to your favorites.
+                </p>
+                <Button asChild variant="outline" className="w-full h-12 rounded-xl border-red-500 text-red-500 hover:bg-red-50 font-bold uppercase tracking-widest text-[10px]">
+                  <Link href="/favorites">
+                    View Favorites
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

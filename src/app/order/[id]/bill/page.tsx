@@ -176,33 +176,21 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
               </div>
             </div>
 
-            {/* Premium Artisanal Seal */}
-            <div className="flex flex-col items-center gap-4 py-20 bg-muted/10 rounded-[3rem] mt-12 mb-12 border-2 border-dashed border-accent/20 border-dotted">
-              <div className="relative group">
-                <div className="absolute inset-0 bg-accent/20 rounded-full blur-2xl group-hover:bg-accent/30 transition-all duration-500" />
-                <div className="relative h-28 w-28 rounded-full bg-white shadow-[0_15px_40px_rgba(217,142,58,0.2)] border-8 border-accent/10 overflow-hidden flex items-center justify-center transition-transform hover:scale-110 duration-500">
-                  <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent pointer-events-none" />
-                  <img 
-                    src={storeSettings.logoUrl} 
-                    alt="V-WOOD Official Seal" 
-                    className="w-16 h-16 object-contain grayscale-0 group-hover:scale-110 transition-transform" 
-                  />
-                  <div className="absolute inset-0 border-[3px] border-accent/20 rounded-full m-1 pointer-events-none" />
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-[10px] font-bold text-accent uppercase tracking-[0.5em] mb-1">Official Artisanal Seal</p>
-                <p className="text-2xl font-headline font-bold text-primary">Certified Craftsmanship</p>
-                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mt-2 px-6 py-1.5 bg-white rounded-full inline-block border shadow-sm">
-                  Morbi Studio Hub • Gujarat India
-                </p>
-              </div>
-            </div>
-
             {/* Footer */}
-            <div className="mt-8 pt-12 border-t text-center space-y-4">
-              <div className="flex justify-center gap-2 mb-4">
-                <ShoppingBag className="h-5 w-5 text-accent" />
+            <div className="mt-8 pt-12 border-t text-center space-y-6">
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative h-24 w-24 transition-transform hover:scale-110 duration-500">
+                  <Image 
+                    src="/v-wood-seal.png" 
+                    alt="Official Artisanal Seal" 
+                    fill 
+                    className="object-contain drop-shadow-xl" 
+                  />
+                </div>
+                <div className="text-center">
+                  <p className="text-[9px] font-bold text-accent uppercase tracking-[0.4em]">Official Studio Seal</p>
+                  <p className="text-[7px] text-muted-foreground font-bold uppercase tracking-widest mt-1 italic">V-WOOD QUARTZ • MORBI HUB</p>
+                </div>
               </div>
               <h4 className="font-headline font-bold text-primary text-xl">Thank you for choosing V-WOOD QUARTZ</h4>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto leading-relaxed italic">
@@ -211,6 +199,7 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
             </div>
           </CardContent>
         </Card>
+
 
         <div className="mt-12 text-center print:hidden">
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold">Nature's Time, Handcrafted For You.</p>

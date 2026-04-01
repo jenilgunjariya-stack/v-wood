@@ -21,7 +21,9 @@ import {
   Watch,
   Image as ImageIcon,
   AlarmClock,
-  Home
+  Home,
+  Heart,
+  Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,10 +47,11 @@ import {
 } from "@/components/ui/accordion";
 
 export function Navbar() {
-  const { cart, userName, userPhoto, isAdmin, searchQuery, setSearchQuery, storeSettings, logout } = useStore();
+  const { cart, favorites, userName, userPhoto, isAdmin, searchQuery, setSearchQuery, storeSettings, logout } = useStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const favCount = favorites.length;
   const router = useRouter();
 
   useEffect(() => {
@@ -74,7 +77,7 @@ export function Navbar() {
   const handleLogout = () => {
     logout();
     toast({ title: "Logged Out", description: "You have been logged out successfully." });
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const ShoppingOptions = [
@@ -105,6 +108,9 @@ export function Navbar() {
         </DropdownMenuContent>
       </DropdownMenu>
       <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About Us</Link>
+      {userName !== "Guest" && (
+        <Link href="/orders" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">Order History</Link>
+      )}
       {isAdmin && (
         <Link href="/admin" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Admin Dashboard</Link>
       )}
@@ -194,19 +200,41 @@ export function Navbar() {
               </Button>
             </Link>
           ) : (
-            <Link href="/profile" className="hidden sm:block">
-              <Button variant="ghost" className="flex items-center gap-3 h-12 px-2 pl-2 pr-5 rounded-full bg-accent/10 text-accent font-bold group">
-                <Avatar className="h-9 w-9 border-2 border-white/50 group-hover:scale-105 transition-transform">
-                  <AvatarImage src={userPhoto} alt={userName} />
-                  <AvatarFallback className="bg-accent text-accent-foreground font-headline">
-                    {userName[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="text-[11px] uppercase tracking-widest truncate max-w-[100px]">{userName}</span>
+            <div className="hidden sm:flex items-center gap-3">
+              <Link href="/profile">
+                <Button variant="ghost" className="flex items-center gap-3 h-12 px-2 pl-2 pr-5 rounded-full bg-accent/10 text-accent font-bold group">
+                  <Avatar className="h-9 w-9 border-2 border-white/50 group-hover:scale-105 transition-transform">
+                    <AvatarImage src={userPhoto} alt={userName} />
+                    <AvatarFallback className="bg-accent text-accent-foreground font-headline">
+                      {userName[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-[11px] uppercase tracking-widest truncate max-w-[100px]">{userName}</span>
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-10 px-4 rounded-full border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest transition-all"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
               </Button>
-            </Link>
+            </div>
           )}
           
+          <Link href="/favorites">
+            <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
+              <Heart className={`h-5 w-5 ${favCount > 0 ? "fill-red-500 text-red-500" : ""}`} />
+              {favCount > 0 && (
+                <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg animate-in zoom-in">
+                  {favCount}
+                </span>
+              )}
+            </Button>
+          </Link>
+
           <Link href="/cart">
             <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
               <ShoppingCart className="h-5 w-5" />
@@ -270,11 +298,28 @@ export function Navbar() {
                       About The Studio
                     </Link>
 
+                    {userName !== "Guest" && (
+                      <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                        <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                        Order History
+                      </Link>
+                    )}
+
                     {isAdmin && (
                       <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
                         <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         Management Hub
                       </Link>
+                    )}
+
+                    {!isAdmin && userName !== "Guest" && (
+                      <button 
+                        onClick={handleLogout}
+                        className="flex items-center gap-4 p-5 rounded-2xl hover:bg-red-50 text-red-500 transition-all font-bold text-sm group w-full text-left"
+                      >
+                        <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        Sign Out Session
+                      </button>
                     )}
                   </nav>
                 </div>

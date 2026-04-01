@@ -6,24 +6,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ClockCard } from "@/components/clocks/ClockCard";
 import { useStore } from "@/app/lib/store";
 import { Button } from "@/components/ui/button";
-import { Layers, Search, X, MapPin, Mail, Instagram, Facebook, Phone, Globe, ShieldCheck, User, Clock as ClockIcon, SlidersHorizontal, ArrowRight, Zap, Watch, AlarmClock, Image as ImageIcon } from "lucide-react";
+import { Layers, Search, X, MapPin, Mail, Instagram, Facebook, Phone, Globe, ShieldCheck, User, Clock as ClockIcon, ArrowRight, Zap, Watch, AlarmClock, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export default function Home() {
   const { products, searchQuery, setSearchQuery, storeSettings, userName, userPhoto } = useStore();
-  const [selectedStyle, setSelectedStyle] = useState("All");
-  const [priceRange, setPriceRange] = useState([0, 50000]);
-  const [selectedShape, setSelectedShape] = useState("All");
-  const [selectedColor, setSelectedColor] = useState("All");
-  const [onSaleOnly, setOnSaleOnly] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [mounted, setMounted] = useState(false);
 
@@ -36,105 +28,13 @@ export default function Home() {
   }, []);
 
   const inStockProducts = products.filter(p => p.stock > 0);
-  const availableStyles = ["All", ...Array.from(new Set(inStockProducts.map(p => p.style)))];
-  const availableShapes = ["All", "Round", "Square", "Rectangular"];
-  const availableColors = ["All", "Oak", "Walnut", "Charcoal", "Natural", "Black"];
-
   const filteredProducts = inStockProducts.filter(clock => {
-    const matchesSearch = 
-      clock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clock.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      clock.style.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesStyle = selectedStyle === "All" || clock.style === selectedStyle;
-    const matchesPrice = clock.price >= priceRange[0] && clock.price <= priceRange[1];
-    
-    const clockShape = (clock as any).shape || "Round";
-    const matchesShape = selectedShape === "All" || clockShape === selectedShape;
-
-    const clockColor = (clock as any).color || "Natural";
-    const matchesColor = selectedColor === "All" || clockColor === selectedColor;
-    
-    const matchesSale = !onSaleOnly || ((clock as any).discountPrice && (clock as any).discountPrice < clock.price);
-    
-    return matchesSearch && matchesStyle && matchesPrice && matchesShape && matchesColor && matchesSale;
+    const matchesSearch = clock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         clock.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         clock.style.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || clock.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
-
-  const FilterPanel = () => (
-    <div className="space-y-8 p-1">
-      <div className="space-y-4">
-        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Price Range (₹)</Label>
-        <Slider 
-          value={priceRange} 
-          onValueChange={setPriceRange} 
-          max={50000} 
-          step={500} 
-          className="py-4"
-        />
-        <div className="flex justify-between text-sm font-bold text-primary">
-          <span>₹{priceRange[0].toLocaleString()}</span>
-          <span>₹{priceRange[1].toLocaleString()}</span>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Geometry / Shape</Label>
-        <div className="flex flex-wrap gap-2">
-          {availableShapes.map(shape => (
-            <Button 
-              key={shape}
-              variant={selectedShape === shape ? "default" : "outline"}
-              size="sm"
-              className="rounded-full h-8 text-[10px] font-bold uppercase tracking-widest"
-              onClick={() => setSelectedShape(shape)}
-            >
-              {shape}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Artisanal Color</Label>
-        <div className="flex flex-wrap gap-2">
-          {availableColors.map(color => (
-            <Button 
-              key={color}
-              variant={selectedColor === color ? "default" : "outline"}
-              size="sm"
-              className="rounded-full h-8 text-[10px] font-bold uppercase tracking-widest"
-              onClick={() => setSelectedColor(color)}
-            >
-              {color}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between pt-4 border-t">
-        <div className="space-y-0.5">
-          <Label className="text-xs font-bold uppercase tracking-widest text-primary">Artisanal Sale</Label>
-          <p className="text-[10px] text-muted-foreground">Show only discounted pieces</p>
-        </div>
-        <Switch checked={onSaleOnly} onCheckedChange={setOnSaleOnly} />
-      </div>
-
-      <Button 
-        variant="ghost" 
-        className="w-full text-xs font-bold uppercase tracking-widest text-destructive hover:bg-destructive/5 mt-4"
-        onClick={() => {
-          setPriceRange([0, 50000]);
-          setSelectedShape("All");
-          setSelectedColor("All");
-          setSelectedStyle("All");
-          setOnSaleOnly(false);
-          setSearchQuery("");
-        }}
-      >
-        Clear All Filters
-      </Button>
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -209,34 +109,71 @@ export default function Home() {
         {/* Visual Category Menu */}
         <section className="py-12 bg-white/50 border-y border-primary/5">
           <div className="wide-container">
-            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12">
-              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+            <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
+              <button 
+                onClick={() => setSelectedCategory(null)}
+                className={cn(
+                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
+                  selectedCategory === null ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                )}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
+                  <Layers className="h-8 w-8" />
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">All Collection</span>
+              </button>
+
+              <button 
+                onClick={() => setSelectedCategory("Wall Clock")}
+                className={cn(
+                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
+                  selectedCategory === "Wall Clock" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                )}
+              >
                 <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
                   <ClockIcon className="h-8 w-8" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Wall Clocks</span>
-              </Link>
+              </button>
               
-              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+              <button 
+                onClick={() => setSelectedCategory("Alarm Clock")}
+                className={cn(
+                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
+                  selectedCategory === "Alarm Clock" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                )}
+              >
                 <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
                   <AlarmClock className="h-8 w-8" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Alarm Clocks</span>
-              </Link>
+              </button>
 
-              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+              <button 
+                onClick={() => setSelectedCategory("Hand Watch")}
+                className={cn(
+                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
+                  selectedCategory === "Hand Watch" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                )}
+              >
                 <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
                   <Watch className="h-8 w-8" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Hand Watches</span>
-              </Link>
+              </button>
 
-              <Link href="/#collection" className="group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] hover:bg-black hover:text-white transition-all duration-500 min-w-[160px] border border-transparent hover:border-primary shadow-sm hover:shadow-2xl">
+              <button 
+                onClick={() => setSelectedCategory("Photo Frame")}
+                className={cn(
+                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
+                  selectedCategory === "Photo Frame" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                )}
+              >
                 <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
                   <ImageIcon className="h-8 w-8" />
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Photo Frames</span>
-              </Link>
+              </button>
             </div>
           </div>
         </section>
@@ -245,7 +182,9 @@ export default function Home() {
         <section id="collection" className="py-24 wide-container">
           <div className="flex flex-col lg:flex-row items-start lg:items-end justify-between mb-20 gap-12">
             <div className="max-w-3xl w-full">
-              <h2 className="v-section-heading">The Collection</h2>
+              <h2 className="v-section-heading">
+                {selectedCategory ? `${selectedCategory} Collection` : "The Full Collection"}
+              </h2>
               <p className="text-xl text-muted-foreground mb-10 leading-relaxed max-w-2xl">Each piece is a unique dialogue between the craftsman and the grain.</p>
               
               <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -253,53 +192,75 @@ export default function Home() {
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
                   <Input 
                     placeholder="Find your timepiece..." 
-                    className="pl-14 h-16 rounded-2xl border-2 focus:border-accent transition-all bg-white text-lg shadow-sm w-full"
+                    className="pl-14 h-16 rounded-2xl border-2 focus:border-accent transition-all bg-white text-lg shadow-sm w-full font-bold uppercase tracking-widest"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="h-16 px-8 rounded-2xl border-2 border-primary/10 hover:border-accent hover:text-accent font-bold gap-3 transition-all shrink-0">
-                      <SlidersHorizontal className="h-5 w-5" />
-                      Filter Collection
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-md">
-                    <SheetHeader className="mb-8">
-                      <SheetTitle className="text-3xl font-headline font-bold">Refine Results</SheetTitle>
-                    </SheetHeader>
-                    <FilterPanel />
-                  </SheetContent>
-                </Sheet>
               </div>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              {availableStyles.map((style) => (
-                <Button 
-                  key={style} 
-                  variant={selectedStyle === style ? "default" : "outline"} 
-                  size="lg" 
-                  className={cn(
-                    "text-xs font-bold uppercase tracking-[0.2em] rounded-full px-8 h-14 transition-all shadow-sm",
-                    selectedStyle === style ? "bg-primary text-white shadow-xl" : "text-muted-foreground hover:border-accent hover:text-accent"
-                  )}
-                  onClick={() => setSelectedStyle(style)}
-                >
-                  {style}
-                </Button>
-              ))}
             </div>
           </div>
 
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
-              {filteredProducts.map((clock) => (
-                <ClockCard key={clock.id} clock={clock} />
-              ))}
-            </div>
+            selectedCategory === null && searchQuery === "" ? (
+              <div className="space-y-24">
+                {["Wall Clock", "Alarm Clock", "Hand Watch", "Photo Frame"].map(cat => {
+                  const catProducts = filteredProducts.filter(p => p.category === cat);
+                  if (catProducts.length === 0) return null;
+                  return (
+                    <div key={cat} className="space-y-12 animate-in fade-in slide-in-from-bottom duration-1000">
+                      <div className="flex items-center gap-8">
+                        <div className="flex flex-col">
+                          <h3 className="text-4xl font-headline font-bold text-primary">{cat}s</h3>
+                          <div className="h-1.5 w-20 bg-accent mt-2 rounded-full" />
+                        </div>
+                        <div className="h-px flex-1 bg-primary/10" />
+                        <Button 
+                          variant="ghost" 
+                          className="text-xs font-bold uppercase tracking-widest text-accent hover:text-accent/80 p-0"
+                          onClick={() => setSelectedCategory(cat)}
+                        >
+                          View All {cat}s <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+                        {catProducts.map((clock) => (
+                          <ClockCard key={clock.id} clock={clock} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                
+                {/* Fallback for other categories */}
+                {(() => {
+                  const others = filteredProducts.filter(p => !["Wall Clock", "Alarm Clock", "Hand Watch", "Photo Frame"].includes(p.category || ""));
+                  if (others.length === 0) return null;
+                  return (
+                    <div className="space-y-12 animate-in fade-in slide-in-from-bottom duration-1000">
+                      <div className="flex items-center gap-8">
+                        <div className="flex flex-col">
+                          <h3 className="text-4xl font-headline font-bold text-primary">Other Collections</h3>
+                          <div className="h-1.5 w-20 bg-accent mt-2 rounded-full" />
+                        </div>
+                        <div className="h-px flex-1 bg-primary/10" />
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+                        {others.map((clock) => (
+                          <ClockCard key={clock.id} clock={clock} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+                {filteredProducts.map((clock) => (
+                  <ClockCard key={clock.id} clock={clock} />
+                ))}
+              </div>
+            )
           ) : (
             <div className="text-center py-40 bg-muted/20 rounded-[4rem] border-4 border-dashed border-muted">
               <h3 className="text-4xl font-headline font-bold text-primary">No results found</h3>
@@ -429,6 +390,7 @@ export default function Home() {
               <h4 className="font-headline text-2xl font-bold text-primary">Discover</h4>
               <ul className="space-y-5 text-sm font-bold uppercase tracking-widest">
                 <li><Link href="/" className="text-muted-foreground hover:text-accent transition-colors">Catalog</Link></li>
+                <li><Link href="/orders" className="text-muted-foreground hover:text-accent transition-colors">Order History</Link></li>
                 <li><Link href="/about" className="text-muted-foreground hover:text-accent transition-colors">Our Story</Link></li>
               </ul>
             </div>

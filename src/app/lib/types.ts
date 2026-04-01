@@ -5,12 +5,24 @@ export interface Clock {
   price: number;
   description: string;
   style: string;
+  category: string;
   imageUrl: string;
   specifications: string[];
   stock: number;
   shape?: string;
   color?: string;
   discountPrice?: number;
+  ratings?: number[]; // Legacy average support
+}
+
+export interface Rating {
+  id: string;
+  productId: string;
+  userName: string;
+  userPhoto?: string;
+  rating: number; // 1-5
+  comment?: string;
+  date: string;
 }
 
 export interface CartItem extends Clock {
@@ -22,7 +34,7 @@ export interface Order {
   date: string;
   items: CartItem[];
   total: number;
-  status: 'Awaiting Verification' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+  status: 'Confirmed' | 'Awaiting Verification' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
   customerName: string;
   customerAddress: string;
   paymentMethod: 'Card' | 'UPI' | 'COD';

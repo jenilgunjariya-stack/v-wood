@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Camera, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Clock as ClockType, Order, Employee } from "@/app/lib/types";
 import { toast } from "@/hooks/use-toast";
@@ -22,8 +22,8 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminPage() {
-  const { products, updateProducts, storeSettings, setStoreSettings, logout, isAdmin, userName, userPhoto, orders, updateOrderStatus, employees, addEmployee, updateEmployee, removeEmployee, payAllEmployees, updateAttendance, updateEmployeeStatus, resetPayroll } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings'>('products');
+  const { products, updateProducts, storeSettings, setStoreSettings, logout, isAdmin, userName, userPhoto, orders, updateOrderStatus, employees, addEmployee, updateEmployee, removeEmployee, payAllEmployees, updateAttendance, updateEmployeeStatus, resetPayroll, ratings } = useStore();
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'cameras' | 'ratings'>('products');
   const [empSubTab, setEmpSubTab] = useState<'list' | 'attendance' | 'report'>('list');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -44,6 +44,7 @@ export default function AdminPage() {
     price: 0,
     description: "",
     style: "Modern",
+    category: "Wall Clock",
     imageUrl: "",
     specifications: ["Battery Powered", "Quartz Movement"],
     stock: 0
@@ -183,14 +184,14 @@ export default function AdminPage() {
     
     updateProducts([...products, clock]);
     setIsAddOpen(false);
-    setNewClock({ name: "", price: 0, description: "", style: "Modern", imageUrl: "", specifications: ["Battery Powered", "Quartz Movement"], stock: 0 });
+    setNewClock({ name: "", price: 0, description: "", style: "Modern", category: "Wall Clock", imageUrl: "", specifications: ["Battery Powered", "Quartz Movement"], stock: 0 });
     toast({ title: "Product Added", description: "New timepiece successfully listed." });
   };
 
   const handleLogout = () => {
     logout();
     toast({ title: "Logged Out", description: "Session ended successfully." });
-    router.push("/login");
+    window.location.href = "/login";
   };
 
   const outOfStockCount = products.filter(p => p.stock <= 0).length;
@@ -270,11 +271,31 @@ export default function AdminPage() {
               variant="ghost" 
               className={cn(
                 "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'cameras' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('cameras')}
+            >
+              <Camera className="h-5 w-5" /> Camera Access
+            </Button>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
                 activeTab === 'settings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
               )}
               onClick={() => setActiveTab('settings')}
             >
               <Settings className="h-5 w-5" /> Settings
+            </Button>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'ratings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('ratings')}
+            >
+              <Star className="h-5 w-5" /> Ratings
             </Button>
           </nav>
 
@@ -328,24 +349,39 @@ export default function AdminPage() {
                       <div className="space-y-6 pt-6">
                         <div className="grid grid-cols-2 gap-6">
                            <div className="space-y-2">
-                            <Label>Clock Name</Label>
+                            <Label>Product Name</Label>
                             <Input value={newClock.name} onChange={e => setNewClock({...newClock, name: e.target.value})} placeholder="Classic Gold" className="h-12" />
                           </div>
                           <div className="space-y-2">
-                            <Label>Style / Category</Label>
-                            <Select onValueChange={(val) => setNewClock({...newClock, style: val})}>
-                              <SelectTrigger className="h-12">
-                                <SelectValue placeholder="Select Style" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Minimalist">Minimalist</SelectItem>
-                                <SelectItem value="Mid-Century">Mid-Century</SelectItem>
-                                <SelectItem value="Industrial">Industrial</SelectItem>
-                                <SelectItem value="Vintage">Vintage</SelectItem>
-                                <SelectItem value="Modern">Modern</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
+                             <Label>Category</Label>
+                             <Select value={newClock.category} onValueChange={(val) => setNewClock({...newClock, category: val})}>
+                               <SelectTrigger className="h-12">
+                                 <SelectValue placeholder="Select Category" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 <SelectItem value="Wall Clock">Wall Clock</SelectItem>
+                                 <SelectItem value="Alarm Clock">Alarm Clock</SelectItem>
+                                 <SelectItem value="Hand Watch">Hand Watch</SelectItem>
+                                 <SelectItem value="Photo Frame">Photo Frame</SelectItem>
+                                 <SelectItem value="Table Clock">Table Clock</SelectItem>
+                               </SelectContent>
+                             </Select>
+                           </div>
+                           <div className="space-y-2">
+                             <Label>Style / Aesthetic</Label>
+                             <Select onValueChange={(val) => setNewClock({...newClock, style: val})}>
+                               <SelectTrigger className="h-12">
+                                 <SelectValue placeholder="Select Style" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 <SelectItem value="Minimalist">Minimalist</SelectItem>
+                                 <SelectItem value="Mid-Century">Mid-Century</SelectItem>
+                                 <SelectItem value="Industrial">Industrial</SelectItem>
+                                 <SelectItem value="Vintage">Vintage</SelectItem>
+                                 <SelectItem value="Modern">Modern</SelectItem>
+                               </SelectContent>
+                             </Select>
+                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-6">
                           <div className="space-y-2">
@@ -431,6 +467,7 @@ export default function AdminPage() {
                   <thead className="bg-muted/50 border-b">
                     <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       <th className="px-8 py-6">Product</th>
+                      <th className="px-8 py-6">Category</th>
                       <th className="px-8 py-6">Price</th>
                       <th className="px-8 py-6 text-center">Stock Status</th>
                       <th className="px-8 py-6 text-right">Actions</th>
@@ -444,13 +481,15 @@ export default function AdminPage() {
                               <div className="h-16 w-16 rounded-[1.25rem] border overflow-hidden shrink-0 bg-muted p-1">
                                 <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover rounded-xl" />
                               </div>
-                              <div className="min-w-0">
-                                <span className="font-bold text-primary text-lg block truncate">{p.name}</span>
-                                <span className="text-[10px] uppercase font-bold text-accent tracking-widest">{p.style}</span>
-                              </div>
+                              <span className="font-bold text-primary">{p.name}</span>
                            </div>
                         </td>
-                        <td className="px-8 py-6 font-bold text-primary text-lg">₹{p.price.toLocaleString('en-IN')}</td>
+                            <td className="px-8 py-6">
+                              <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 font-bold px-4 py-1.5 rounded-full text-[10px] uppercase tracking-widest">
+                                {p.category || "General"}
+                              </Badge>
+                            </td>
+                            <td className="px-8 py-6 font-bold text-primary text-lg">₹{p.price.toLocaleString('en-IN')}</td>
                         <td className="px-8 py-6 text-center">
                           <Badge 
                             variant={p.stock > 0 ? "outline" : "destructive"}
@@ -494,8 +533,26 @@ export default function AdminPage() {
                           <Input value={editingClock.name} onChange={e => setEditingClock({...editingClock, name: e.target.value})} className="h-12" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Style / Category</Label>
+                          <Label>Style / Aesthetic</Label>
                           <Input value={editingClock.style} onChange={e => setEditingClock({...editingClock, style: e.target.value})} className="h-12" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Category</Label>
+                          <Select 
+                            value={editingClock.category} 
+                            onValueChange={(val) => setEditingClock({...editingClock, category: val})}
+                          >
+                            <SelectTrigger className="h-12">
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Wall Clock">Wall Clock</SelectItem>
+                              <SelectItem value="Alarm Clock">Alarm Clock</SelectItem>
+                              <SelectItem value="Hand Watch">Hand Watch</SelectItem>
+                              <SelectItem value="Photo Frame">Photo Frame</SelectItem>
+                              <SelectItem value="Table Clock">Table Clock</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-6">
@@ -578,6 +635,79 @@ export default function AdminPage() {
                   )}
                 </DialogContent>
               </Dialog>
+            </div>
+          )}
+
+          {activeTab === 'ratings' && (
+            <div className="animate-in fade-in duration-500">
+              <div className="mb-16">
+                <h1 className="text-5xl font-headline font-bold text-primary">Customer Feedback</h1>
+                <p className="text-muted-foreground mt-2 text-lg">Oversee all ratings and reviews submitted by artisanal collectors.</p>
+              </div>
+
+              <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
+                <table className="w-full text-left">
+                  <thead className="bg-muted/50 border-b">
+                    <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+                      <th className="px-8 py-6">Customer</th>
+                      <th className="px-8 py-6">Product</th>
+                      <th className="px-8 py-6">Rating</th>
+                      <th className="px-8 py-6">Date</th>
+                      <th className="px-8 py-6 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {ratings.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground italic">
+                          No customer ratings recorded yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      ratings.map((rating) => {
+                        const product = products.find(p => p.id === rating.productId);
+                        return (
+                          <tr key={rating.id} className="hover:bg-muted/5 transition-colors">
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-4">
+                                <Avatar className="h-10 w-10 border border-primary/10">
+                                  <AvatarImage src={rating.userPhoto} />
+                                  <AvatarFallback className="bg-muted text-primary">{rating.userName[0]}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="font-bold text-primary">{rating.userName}</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Collector</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-muted p-1">
+                                  <img src={product?.imageUrl} className="w-full h-full object-cover rounded-md" />
+                                </div>
+                                <span className="font-bold text-sm text-primary truncate max-w-[150px]">{product?.name || "Unknown Product"}</span>
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map((s) => (
+                                  <Star key={s} className={cn("h-4 w-4", s <= rating.rating ? "fill-accent text-accent" : "text-muted-foreground/20")} />
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <span className="text-sm font-bold text-muted-foreground">{rating.date}</span>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <Badge className="bg-green-500 text-white border-none text-[9px] uppercase tracking-widest font-bold h-6 px-3">Verified</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
 
@@ -964,6 +1094,7 @@ export default function AdminPage() {
                       <th className="px-8 py-6">Order Reference</th>
                       <th className="px-8 py-6">Collector</th>
                       <th className="px-8 py-6">Investment</th>
+                      <th className="px-8 py-6">Expected Arrival</th>
                       <th className="px-8 py-6">Current Stage</th>
                       <th className="px-8 py-6 text-right">Acquisition File</th>
                     </tr>
@@ -974,6 +1105,14 @@ export default function AdminPage() {
                         <td className="px-8 py-6 font-bold text-primary text-lg">{order.id}</td>
                         <td className="px-8 py-6 text-sm font-bold uppercase tracking-widest text-muted-foreground">{order.customerName}</td>
                         <td className="px-8 py-6 font-bold text-accent text-lg">₹{order.total.toLocaleString('en-IN')}</td>
+                        <td className="px-8 py-6">
+                           <p className="text-sm font-bold text-primary">
+                             {new Date(new Date(order.date).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                               day: 'numeric', month: 'short', year: 'numeric'
+                             })}
+                           </p>
+                           <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Est. Completion</p>
+                        </td>
                         <td className="px-8 py-6">
                           <Select 
                             value={order.status} 
@@ -1098,6 +1237,76 @@ export default function AdminPage() {
                   </Button>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {activeTab === 'cameras' && (
+            <div className="animate-in fade-in duration-500">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-16">
+                <div>
+                  <h1 className="text-5xl font-headline font-bold text-primary">Camera Feeds</h1>
+                  <p className="text-muted-foreground mt-2 text-lg">Secure real-time observation of all locations.</p>
+                </div>
+                <div className="p-4 bg-accent/5 border border-accent/20 rounded-2xl flex items-center gap-3">
+                  <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-sm shadow-red-500" />
+                  <span className="text-xs font-bold uppercase tracking-widest text-primary">LIVE Feed Recording</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                {[
+                  { name: "Main Showroom", location: "Morbi HQ", status: "Active", time: "LIVE" },
+                  { name: "Artisan Workshop", location: "Ground Floor", status: "Active", time: "LIVE" },
+                  { name: "Storage Facility", location: "Unit-B", status: "Idle", time: "STAND-BY" },
+                  { name: "Entrance Gate", location: "Security Post", status: "Active", time: "LIVE" }
+                ].map((cam, i) => (
+                  <Card key={i} className={cn(
+                    "bg-white border-2 border-primary/5 shadow-2xl rounded-[3rem] overflow-hidden group transition-all duration-700 hover:border-accent/40",
+                    cam.status === 'Idle' && "grayscale opacity-80"
+                  )}>
+                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
+                      <img 
+                        src={`https://picsum.photos/seed/camera-${i}/1280/720`} 
+                        alt={cam.name} 
+                        className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-[20s]" 
+                      />
+                      
+                      <div className="absolute inset-0 pointer-events-none p-8 flex flex-col justify-between">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
+                            <div className={cn("w-2 h-2 rounded-full", cam.status === 'Active' ? "bg-red-600 animate-pulse shadow-red-500 shadow-sm" : "bg-gray-400")} />
+                            <span className="text-[10px] font-bold text-white uppercase tracking-widest">
+                               CAM-0{i+1}: {cam.time}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[2px]">
+                        <Button variant="ghost" className="rounded-full h-16 w-16 bg-white text-primary hover:bg-accent text-accent-foreground shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500 p-0">
+                          <RotateCcw className="h-6 w-6 animate-spin-slow" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardHeader className="p-8">
+                      <div className="flex justify-between items-center">
+                        <div className="space-y-1">
+                          <CardTitle className="text-2xl font-bold text-primary">{cam.name}</CardTitle>
+                          <CardDescription className="flex items-center gap-2">
+                             <MapPin className="h-3 w-3 text-accent" /> {cam.location}
+                          </CardDescription>
+                        </div>
+                        <Badge variant="outline" className={cn(
+                          "rounded-full px-4 h-8 font-bold border-2 transition-all",
+                          cam.status === 'Active' ? "border-green-500/20 text-green-600 bg-green-50" : "border-gray-300 text-gray-400 bg-gray-50"
+                        )}>
+                          {cam.status}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
         </main>

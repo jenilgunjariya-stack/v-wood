@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Clock, CartItem, Order, Employee } from './types';
+import { Clock, CartItem, Order, Employee, Rating } from './types';
 
 export interface StoreSettings {
   name: string;
@@ -24,9 +24,12 @@ const INITIAL_PRODUCTS: Clock[] = [
     price: 8999,
     description: "A sleek, wood-crafted wall clock that brings a touch of nature and simplicity to any modern living space.",
     style: "Minimalist",
+    category: "Wall Clock",
     imageUrl: "https://picsum.photos/seed/clock1/600/600",
     specifications: ["Diameter: 12 inches", "Material: Oak Wood", "Movement: Silent Quartz", "Weight: 1.2 lbs"],
-    stock: 15
+    stock: 15,
+    shape: "Round",
+    color: "Oak"
   },
   {
     id: "mid-century-solaris-flare",
@@ -34,9 +37,13 @@ const INITIAL_PRODUCTS: Clock[] = [
     price: 18500,
     description: "Inspired by the mid-century modern aesthetic, the Solaris Flare features a stunning sunburst design with brass accents.",
     style: "Mid-Century",
+    category: "Wall Clock",
     imageUrl: "https://picsum.photos/seed/clock2/600/600",
     specifications: ["Diameter: 24 inches", "Material: Brass & Walnut", "Movement: Precision Quartz", "Weight: 3.5 lbs"],
-    stock: 8
+    stock: 8,
+    shape: "Round",
+    color: "Walnut",
+    discountPrice: 15999
   },
   {
     id: "industrial-iron-foundry",
@@ -44,9 +51,12 @@ const INITIAL_PRODUCTS: Clock[] = [
     price: 14200,
     description: "A bold industrial piece with exposed gears and a rugged metal finish, perfect for loft-style interiors.",
     style: "Industrial",
+    category: "Wall Clock",
     imageUrl: "https://picsum.photos/seed/clock3/600/600",
     specifications: ["Diameter: 18 inches", "Material: Distressed Iron", "Movement: Mechanical Gear", "Weight: 5.0 lbs"],
-    stock: 5
+    stock: 5,
+    shape: "Square",
+    color: "Charcoal"
   }
 ];
 
@@ -67,14 +77,6 @@ const INITIAL_EMPLOYEES: Employee[] = [
     paymentStatus: "Paid",
     lastPaidDate: "Oct 01, 2023",
     attendance: {}
-  },
-  {
-    id: "emp-3",
-    name: "Anjali Sharma",
-    salary: 22000,
-    role: "Inventory Manager",
-    paymentStatus: "Pending",
-    attendance: {}
   }
 ];
 
@@ -84,9 +86,9 @@ const INITIAL_SETTINGS: StoreSettings = {
   email: "support@vwoodquartz.com",
   phone: "+91 9727408352",
   openingHours: "8:00 AM - 6:00 PM (Closed on Wednesdays)",
-  logoUrl: "https://img1.wsimg.com/isteam/ip/613470c5-0d44-4b59-8433-95c1c7696081/PicsArt_06-30-03.41.35.jpg",
+  logoUrl: "https://img1.wsimg.com/isteam/ip/613470c5-0d44-4b59-8433-95c1c7696081/PicsArt_06-30-03.41.35.jpg", // Fixed global circular logo reference
   heroImageUrl: "https://i.imgur.com/6vIzIjy.jpeg",
-  ownerName: "JENILBHAI GUNJARIYA",
+  ownerName: "Jenil Nileshbhai Gunjariya",
   paymentQrCodeUrl: "https://picsum.photos/seed/qr-code/400/400",
   locationUrl: "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac",
   upiId: "jenilgunjariya@oksbi"
@@ -101,9 +103,14 @@ interface StoreContextType {
   userEmail: string;
   userPhoto: string;
   userAddress: string;
+  userBankName: string;
   isAdmin: boolean;
   searchQuery: string;
   storeSettings: StoreSettings;
+  ratings: Rating[];
+  addRating: (rating: Omit<Rating, 'id' | 'date'>) => void;
+  getAverageRating: (productId: string) => number;
+  getProductRatings: (productId: string) => Rating[];
   setSearchQuery: (query: string) => void;
   addToCart: (product: Clock) => void;
   removeFromCart: (id: string) => void;
@@ -116,6 +123,7 @@ interface StoreContextType {
   setUserEmail: (email: string) => void;
   setUserPhoto: (photo: string) => void;
   setUserAddress: (address: string) => void;
+  setUserBankName: (bankName: string) => void;
   setStoreSettings: (settings: StoreSettings) => void;
   login: (name: string, isAdminUser?: boolean) => void;
   logout: () => void;
@@ -125,7 +133,10 @@ interface StoreContextType {
   updateEmployee: (emp: Employee) => void;
   removeEmployee: (id: string) => void;
   resetPayroll: () => void;
-  updateAttendance: (empId: string, date: string, status: Employee['attendance'][string]) => void;
+  updateAttendance: (empId: string, date: string, status: any) => void;
+  favorites: Clock[];
+  toggleFavorite: (product: Clock) => void;
+  isFavorite: (id: string) => boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -139,9 +150,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmailState] = useState<string>("");
   const [userPhoto, setUserPhotoState] = useState<string>("");
   const [userAddress, setUserAddressState] = useState<string>("");
+  const [userBankName, setUserBankNameState] = useState<string>("");
   const [isAdmin, setIsAdminState] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [storeSettings, setStoreSettingsState] = useState<StoreSettings>(INITIAL_SETTINGS);
+  const [favorites, setFavorites] = useState<Clock[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -177,6 +191,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const savedAddress = localStorage.getItem('timely_finds_user_address');
     if (savedAddress) setUserAddressState(savedAddress);
 
+    const savedBank = localStorage.getItem('timely_finds_user_bank');
+    if (savedBank) setUserBankNameState(savedBank);
+
     const savedAdmin = localStorage.getItem('timely_finds_is_admin');
     if (savedAdmin) setIsAdminState(savedAdmin === 'true');
 
@@ -184,8 +201,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (savedSettings) {
       try { setStoreSettingsState(JSON.parse(savedSettings)); } catch (e) {}
     }
+
+    const savedFavorites = localStorage.getItem('timely_finds_favorites');
+    if (savedFavorites) {
+      try { setFavorites(JSON.parse(savedFavorites)); } catch (e) {}
+    }
+
+    const savedRatings = localStorage.getItem('timely_finds_ratings');
+    if (savedRatings) {
+      try { setRatings(JSON.parse(savedRatings)); } catch (e) {}
+    }
     
     setIsHydrated(true);
+
+    // Sync state across multiple tabs instantly
+    const handleStorageChange = (e: StorageEvent) => {
+      if (!e.newValue) return;
+      
+      try {
+        const value = JSON.parse(e.newValue);
+        switch (e.key) {
+          case 'timely_finds_settings': setStoreSettingsState(value); break;
+          case 'timely_finds_products': setProducts(value); break;
+          case 'timely_finds_orders': setOrders(value); break;
+          case 'timely_finds_employees': setEmployees(value); break;
+          case 'timely_finds_favorites': setFavorites(value); break;
+          case 'timely_finds_ratings': setRatings(value); break;
+        }
+      } catch (err) {
+        console.error("Storage sync failed", err);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const saveCart = (newCart: CartItem[]) => {
@@ -307,7 +356,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_employees', JSON.stringify(resetEmployees));
   };
 
-  const updateAttendance = (empId: string, date: string, status: Employee['attendance'][string]) => {
+  const updateAttendance = (empId: string, date: string, status: any) => {
     const newEmployees = employees.map(emp => {
       if (emp.id === empId) {
         return {
@@ -322,6 +371,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+  };
+
+  const toggleFavorite = (product: Clock) => {
+    const isFav = favorites.some(fav => fav.id === product.id);
+    let newFavorites;
+    if (isFav) {
+      newFavorites = favorites.filter(fav => fav.id !== product.id);
+    } else {
+      newFavorites = [...favorites, product];
+    }
+    setFavorites(newFavorites);
+    localStorage.setItem('timely_finds_favorites', JSON.stringify(newFavorites));
   };
 
   const setUserName = (name: string) => {
@@ -344,6 +405,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_user_address', address);
   };
 
+  const setUserBankName = (bankName: string) => {
+    setUserBankNameState(bankName);
+    localStorage.setItem('timely_finds_user_bank', bankName);
+  };
+
   const setStoreSettings = (settings: StoreSettings) => {
     setStoreSettingsState(settings);
     localStorage.setItem('timely_finds_settings', JSON.stringify(settings));
@@ -360,6 +426,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUserEmailState("");
     setUserPhotoState("");
     setUserAddressState("");
+    setUserBankNameState("");
     setIsAdminState(false);
     localStorage.removeItem('timely_finds_user_name');
     localStorage.removeItem('timely_finds_user_email');
@@ -368,14 +435,41 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('timely_finds_is_admin');
   };
 
+  const isFavorite = (id: string) => favorites.some(fav => fav.id === id);
+
+  const addRating = (ratingData: Omit<Rating, 'id' | 'date'>) => {
+    const newRating: Rating = {
+      ...ratingData,
+      id: `RAT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      date: new Date().toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    };
+    const newRatings = [...ratings, newRating];
+    setRatings(newRatings);
+    localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
+  };
+
+  const getAverageRating = (productId: string) => {
+    const productRatings = ratings.filter(r => r.productId === productId);
+    if (productRatings.length === 0) return 0;
+    const sum = productRatings.reduce((acc, curr) => acc + curr.rating, 0);
+    return parseFloat((sum / productRatings.length).toFixed(1));
+  };
+
+  const getProductRatings = (productId: string) => {
+    return ratings.filter(r => r.productId === productId);
+  };
+
   if (!isHydrated) return null;
 
   return (
     <StoreContext.Provider value={{
-      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, isAdmin, searchQuery, storeSettings,
+      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, searchQuery, storeSettings,
       setSearchQuery, addToCart, removeFromCart, updateQuantity, clearCart,
-      addOrder, updateOrderStatus, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setStoreSettings,
-      login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance
+      addOrder, updateOrderStatus, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
+      login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
+      favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings
     }}>
       {children}
     </StoreContext.Provider>
