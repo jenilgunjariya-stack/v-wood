@@ -49,3 +49,11 @@ export interface Employee {
   lastPaidDate?: string;
   attendance?: Record<string, 'Present' | 'Absent' | 'Late' | 'Off'>;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  status: 'Completed' | 'Pending' | 'Not Applicable';
+  createdAt: string;
+}

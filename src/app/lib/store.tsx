@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Clock, CartItem, Order, Employee, Rating } from './types';
+import { Clock, CartItem, Order, Employee, Rating, Task } from './types';
 
 export interface StoreSettings {
   name: string;
@@ -137,6 +137,10 @@ interface StoreContextType {
   favorites: Clock[];
   toggleFavorite: (product: Clock) => void;
   isFavorite: (id: string) => boolean;
+  tasks: Task[];
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  updateTaskStatus: (taskId: string, status: Task['status']) => void;
+  removeTask: (taskId: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -156,6 +160,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [storeSettings, setStoreSettingsState] = useState<StoreSettings>(INITIAL_SETTINGS);
   const [favorites, setFavorites] = useState<Clock[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -211,6 +216,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (savedRatings) {
       try { setRatings(JSON.parse(savedRatings)); } catch (e) {}
     }
+
+    const savedTasks = localStorage.getItem('timely_finds_tasks');
+    if (savedTasks) {
+      try { setTasks(JSON.parse(savedTasks)); } catch (e) {}
+    }
     
     setIsHydrated(true);
 
@@ -227,6 +237,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           case 'timely_finds_employees': setEmployees(value); break;
           case 'timely_finds_favorites': setFavorites(value); break;
           case 'timely_finds_ratings': setRatings(value); break;
+          case 'timely_finds_tasks': setTasks(value); break;
         }
       } catch (err) {
         console.error("Storage sync failed", err);
@@ -461,6 +472,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return ratings.filter(r => r.productId === productId);
   };
 
+  const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    const newTask: Task = {
+      ...taskData,
+      id: `TASK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      createdAt: new Date().toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    };
+    const newTasks = [newTask, ...tasks];
+    setTasks(newTasks);
+    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+  };
+
+  const updateTaskStatus = (taskId: string, status: Task['status']) => {
+    const newTasks = tasks.map(t => t.id === taskId ? { ...t, status } : t);
+    setTasks(newTasks);
+    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+  };
+
+  const removeTask = (taskId: string) => {
+    const newTasks = tasks.filter(t => t.id !== taskId);
+    setTasks(newTasks);
+    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+  };
+
   if (!isHydrated) return null;
 
   return (
@@ -469,7 +505,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSearchQuery, addToCart, removeFromCart, updateQuantity, clearCart,
       addOrder, updateOrderStatus, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
       login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
-      favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings
+      favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings,
+      tasks, addTask, updateTaskStatus, removeTask
     }}>
       {children}
     </StoreContext.Provider>

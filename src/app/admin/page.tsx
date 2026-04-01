@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Camera, Star } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Camera, Star, ClipboardList, LayoutList } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Clock as ClockType, Order, Employee } from "@/app/lib/types";
+import { Clock as ClockType, Order, Employee, Task } from "@/app/lib/types";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -22,13 +22,14 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function AdminPage() {
-  const { products, updateProducts, storeSettings, setStoreSettings, logout, isAdmin, userName, userPhoto, orders, updateOrderStatus, employees, addEmployee, updateEmployee, removeEmployee, payAllEmployees, updateAttendance, updateEmployeeStatus, resetPayroll, ratings } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'cameras' | 'ratings'>('products');
+  const { products, updateProducts, storeSettings, setStoreSettings, logout, isAdmin, userName, userPhoto, orders, updateOrderStatus, employees, addEmployee, updateEmployee, removeEmployee, payAllEmployees, updateAttendance, updateEmployeeStatus, resetPayroll, ratings, tasks, addTask, updateTaskStatus, removeTask } = useStore();
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'cameras' | 'ratings' | 'tasks'>('products');
   const [empSubTab, setEmpSubTab] = useState<'list' | 'attendance' | 'report'>('list');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isAddEmpOpen, setIsAddEmpOpen] = useState(false);
   const [isEditEmpOpen, setIsEditEmpOpen] = useState(false);
+  const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   
   const [mounted, setMounted] = useState(false);
   const [payrollDate, setPayrollDate] = useState<Date>(new Date());
@@ -59,6 +60,7 @@ export default function AdminPage() {
 
   const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
   const [editingClock, setEditingClock] = useState<ClockType | null>(null);
+  const [newTask, setNewTask] = useState({ title: "", description: "" });
   const [tempSettings, setTempSettings] = useState<StoreSettings>(storeSettings);
 
   const formatMonthYear = (date: Date) => {
@@ -188,6 +190,21 @@ export default function AdminPage() {
     toast({ title: "Product Added", description: "New timepiece successfully listed." });
   };
 
+  const handleAddTask = () => {
+    if (!newTask.title.trim()) {
+      toast({ variant: "destructive", title: "Error", description: "Task title is required." });
+      return;
+    }
+    addTask({
+      title: newTask.title,
+      description: newTask.description,
+      status: 'Pending'
+    });
+    setNewTask({ title: "", description: "" });
+    setIsAddTaskOpen(false);
+    toast({ title: "Task Created", description: "New task has been added to the working registry." });
+  };
+
   const handleLogout = () => {
     logout();
     toast({ title: "Logged Out", description: "Session ended successfully." });
@@ -281,21 +298,31 @@ export default function AdminPage() {
               variant="ghost" 
               className={cn(
                 "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
-                activeTab === 'settings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
-              )}
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings className="h-5 w-5" /> Settings
-            </Button>
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
                 activeTab === 'ratings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
               )}
               onClick={() => setActiveTab('ratings')}
             >
               <Star className="h-5 w-5" /> Ratings
+            </Button>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'tasks' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('tasks')}
+            >
+              <LayoutList className="h-5 w-5" /> Working Section
+            </Button>
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'settings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('settings')}
+            >
+              <Settings className="h-5 w-5" /> Settings
             </Button>
           </nav>
 
@@ -1306,6 +1333,131 @@ export default function AdminPage() {
                     </CardHeader>
                   </Card>
                 ))}
+              </div>
+            </div>
+          )}
+          {activeTab === 'tasks' && (
+            <div className="animate-in fade-in duration-500">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-16">
+                <div>
+                  <h1 className="text-5xl font-headline font-bold text-primary">Working Section</h1>
+                  <p className="text-muted-foreground mt-2 text-lg">Manage and track internal studio tasks and pending work.</p>
+                </div>
+                
+                <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold rounded-full h-14 px-8 shadow-xl transition-all hover:scale-105">
+                      <PlusCircle className="mr-3 h-5 w-5" />
+                      Add New Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="font-headline text-3xl">Create New Task</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-6 pt-6">
+                      <div className="space-y-2">
+                        <Label>Task Title</Label>
+                        <Input 
+                          placeholder="e.g. Restore Vintage Clock" 
+                          value={newTask.title}
+                          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                          className="h-12"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Detailed Description</Label>
+                        <Textarea 
+                          placeholder="Describe the pending work and related details..." 
+                          className="min-h-[120px]"
+                          value={newTask.description}
+                          onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                        />
+                      </div>
+                      <Button className="w-full h-14 bg-accent text-accent-foreground font-bold text-lg rounded-2xl" onClick={handleAddTask}>
+                        Add to Registry
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6">
+                {tasks.length === 0 ? (
+                  <Card className="border-2 border-dashed p-16 text-center bg-white/50 rounded-[3rem]">
+                    <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-6">
+                      <ClipboardList className="h-10 w-10 text-muted-foreground/30" />
+                    </div>
+                    <h3 className="text-2xl font-headline font-bold text-primary mb-2">No active tasks</h3>
+                    <p className="text-muted-foreground max-w-xs mx-auto">Your working registry is clear. Add a task to start tracking your progress.</p>
+                  </Card>
+                ) : (
+                  tasks.map((task) => (
+                    <Card 
+                      key={task.id} 
+                      className={cn(
+                        "border-none shadow-xl rounded-[2.5rem] overflow-hidden hover:shadow-2xl transition-all group border-2",
+                        task.status === 'Completed' ? "bg-green-50/50 border-green-200/50" : 
+                        task.status === 'Pending' ? "bg-yellow-50/50 border-yellow-200/50" : 
+                        "bg-red-50/50 border-red-200/50"
+                      )}
+                    >
+                      <CardHeader className="p-8 pb-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground border-muted-foreground/20">
+                                {task.id}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest italic">{task.createdAt}</span>
+                            </div>
+                            <CardTitle className="text-2xl font-headline font-bold text-primary group-hover:text-accent transition-colors">
+                              {task.title}
+                            </CardTitle>
+                          </div>
+                          <div className="flex items-center gap-3 self-end md:self-auto">
+                            <Select 
+                              value={task.status} 
+                              onValueChange={(val) => updateTaskStatus(task.id, val as Task['status'])}
+                            >
+                              <SelectTrigger className={cn(
+                                "h-11 w-[160px] text-[10px] font-bold uppercase tracking-widest rounded-full border-2",
+                                task.status === 'Completed' && "border-green-500/20 text-green-600 bg-green-50",
+                                task.status === 'Pending' && "border-yellow-500/20 text-yellow-600 bg-yellow-50",
+                                task.status === 'Not Applicable' && "border-red-500/20 text-red-600 bg-red-50"
+                              )}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Completed">Completed</SelectItem>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Not Applicable">Not Applicable</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-11 w-11 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-colors"
+                              onClick={() => {
+                                if(confirm("Are you sure you want to remove this task?")) {
+                                  removeTask(task.id);
+                                  toast({ title: "Task Removed", description: "The task has been deleted from the registry." });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="p-8 pt-0">
+                        <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                          {task.description || "No additional details provided."}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
               </div>
             </div>
           )}
