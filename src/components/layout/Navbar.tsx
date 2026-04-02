@@ -23,7 +23,8 @@ import {
   AlarmClock,
   Home,
   Heart,
-  Package
+  Package,
+  Truck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,7 +48,7 @@ import {
 } from "@/components/ui/accordion";
 
 export function Navbar() {
-  const { cart, favorites, userName, userPhoto, isAdmin, searchQuery, setSearchQuery, storeSettings, logout } = useStore();
+  const { cart, favorites, userName, userPhoto, isAdmin, isDelivery, searchQuery, setSearchQuery, storeSettings, logout } = useStore();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -113,6 +114,9 @@ export function Navbar() {
       )}
       {isAdmin && (
         <Link href="/admin" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Admin Dashboard</Link>
+      )}
+      {isDelivery && (
+        <Link href="/delivery" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Logistics Portal</Link>
       )}
     </div>
   );
@@ -309,6 +313,13 @@ export function Navbar() {
                       <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
                         <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
                         Management Hub
+                      </Link>
+                    )}
+
+                    {isDelivery && (
+                      <Link href="/delivery" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
+                        <Truck className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        Logistics Portal
                       </Link>
                     )}
 

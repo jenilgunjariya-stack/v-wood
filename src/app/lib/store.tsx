@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Clock, CartItem, Order, Employee, Rating, Task } from './types';
+import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog } from './types';
 
 export interface StoreSettings {
   name: string;
@@ -105,6 +105,7 @@ interface StoreContextType {
   userAddress: string;
   userBankName: string;
   isAdmin: boolean;
+  isDelivery: boolean;
   searchQuery: string;
   storeSettings: StoreSettings;
   ratings: Rating[];
@@ -118,6 +119,7 @@ interface StoreContextType {
   clearCart: () => void;
   addOrder: (order: Order) => void;
   updateOrderStatus: (orderId: string, status: Order['status']) => void;
+  cancelOrder: (orderId: string) => void;
   updateProducts: (newProducts: Clock[]) => void;
   setUserName: (name: string) => void;
   setUserEmail: (email: string) => void;
@@ -125,7 +127,7 @@ interface StoreContextType {
   setUserAddress: (address: string) => void;
   setUserBankName: (bankName: string) => void;
   setStoreSettings: (settings: StoreSettings) => void;
-  login: (name: string, isAdminUser?: boolean) => void;
+  login: (name: string, isAdminUser?: boolean, isDeliveryUser?: boolean) => void;
   logout: () => void;
   updateEmployeeStatus: (empId: string, status: Employee['paymentStatus']) => void;
   payAllEmployees: () => void;
@@ -140,7 +142,9 @@ interface StoreContextType {
   tasks: Task[];
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
   updateTaskStatus: (taskId: string, status: Task['status']) => void;
+  updateTask: (task: Task) => void;
   removeTask: (taskId: string) => void;
+  logisticsLogs: LogisticsLog[];
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -153,14 +157,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [userName, setUserNameState] = useState<string>("Guest");
   const [userEmail, setUserEmailState] = useState<string>("");
   const [userPhoto, setUserPhotoState] = useState<string>("");
-  const [userAddress, setUserAddressState] = useState<string>("");
-  const [userBankName, setUserBankNameState] = useState<string>("");
-  const [isAdmin, setIsAdminState] = useState<boolean>(false);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [userAddress, setUserAddressState] = useState("");
+  const [userBankName, setUserBankNameState] = useState("");
+  const [isAdmin, setIsAdminState] = useState(false);
+  const [isDelivery, setIsDeliveryState] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [storeSettings, setStoreSettingsState] = useState<StoreSettings>(INITIAL_SETTINGS);
   const [favorites, setFavorites] = useState<Clock[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [logisticsLogs, setLogisticsLogs] = useState<LogisticsLog[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -202,6 +208,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const savedAdmin = localStorage.getItem('timely_finds_is_admin');
     if (savedAdmin) setIsAdminState(savedAdmin === 'true');
 
+    const savedDelivery = localStorage.getItem('timely_finds_is_delivery');
+    if (savedDelivery) setIsDeliveryState(savedDelivery === 'true');
+
     const savedSettings = localStorage.getItem('timely_finds_settings');
     if (savedSettings) {
       try { setStoreSettingsState(JSON.parse(savedSettings)); } catch (e) {}
@@ -221,6 +230,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (savedTasks) {
       try { setTasks(JSON.parse(savedTasks)); } catch (e) {}
     }
+
+    const savedLogs = localStorage.getItem('timely_finds_logs');
+    if (savedLogs) {
+      try { setLogisticsLogs(JSON.parse(savedLogs)); } catch (e) {}
+    }
     
     setIsHydrated(true);
 
@@ -235,9 +249,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           case 'timely_finds_products': setProducts(value); break;
           case 'timely_finds_orders': setOrders(value); break;
           case 'timely_finds_employees': setEmployees(value); break;
+          case 'timely_finds_is_delivery': setIsDeliveryState(value === 'true'); break;
           case 'timely_finds_favorites': setFavorites(value); break;
           case 'timely_finds_ratings': setRatings(value); break;
           case 'timely_finds_tasks': setTasks(value); break;
+          case 'timely_finds_logs': setLogisticsLogs(value); break;
         }
       } catch (err) {
         console.error("Storage sync failed", err);
@@ -302,6 +318,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = orders.map(o => o.id === orderId ? { ...o, status } : o);
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+
+    // Record activity for logistics monitoring
+    const newLog: LogisticsLog = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      deliveryBoyName: isDelivery ? userName : "Studio Administrator",
+      orderId: orderId,
+      action: `Status updated to "${status}"`,
+      timestamp: new Date().toLocaleString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      })
+    };
+
+    const updatedLogs = [newLog, ...logisticsLogs].slice(0, 500);
+    setLogisticsLogs(updatedLogs);
+    localStorage.setItem('timely_finds_logs', JSON.stringify(updatedLogs));
+  };
+
+  const cancelOrder = (orderId: string) => {
+    const orderToCancel = orders.find(o => o.id === orderId);
+    if (!orderToCancel || orderToCancel.status === 'Cancelled' || orderToCancel.status === 'Shipped' || orderToCancel.status === 'Delivered') return;
+
+    // 1. Update Order Status
+    const newOrders = orders.map(o => o.id === orderId ? { ...o, status: 'Cancelled' as const } : o);
+    setOrders(newOrders);
+    localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+
+    // 2. Restore Stock
+    const updatedProducts = products.map(p => {
+      const orderItem = orderToCancel.items.find(item => item.id === p.id);
+      if (orderItem) {
+        return { ...p, stock: p.stock + orderItem.quantity };
+      }
+      return p;
+    });
+    updateProducts(updatedProducts);
+
+    // 3. Notify Admin (Simulation)
+    console.log(`[ADMIN NOTIFICATION]: Order ${orderId} has been CANCELLED by the customer.`);
   };
 
   const updateProducts = (newProducts: Clock[]) => {
@@ -426,10 +481,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_settings', JSON.stringify(settings));
   };
 
-  const login = (name: string, isAdminUser: boolean = false) => {
+  const login = (name: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
     setUserName(name);
     setIsAdminState(isAdminUser);
+    setIsDeliveryState(isDeliveryUser);
     localStorage.setItem('timely_finds_is_admin', isAdminUser.toString());
+    localStorage.setItem('timely_finds_is_delivery', isDeliveryUser.toString());
   };
 
   const logout = () => {
@@ -439,11 +496,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setUserAddressState("");
     setUserBankNameState("");
     setIsAdminState(false);
+    setIsDeliveryState(false);
     localStorage.removeItem('timely_finds_user_name');
     localStorage.removeItem('timely_finds_user_email');
     localStorage.removeItem('timely_finds_user_photo');
     localStorage.removeItem('timely_finds_user_address');
     localStorage.removeItem('timely_finds_is_admin');
+    localStorage.removeItem('timely_finds_is_delivery');
   };
 
   const isFavorite = (id: string) => favorites.some(fav => fav.id === id);
@@ -491,6 +550,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
   };
 
+  const updateTask = (task: Task) => {
+    const newTasks = tasks.map(t => t.id === task.id ? task : t);
+    setTasks(newTasks);
+    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+  };
+
   const removeTask = (taskId: string) => {
     const newTasks = tasks.filter(t => t.id !== taskId);
     setTasks(newTasks);
@@ -501,12 +566,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, searchQuery, storeSettings,
+      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, isDelivery, searchQuery, storeSettings,
       setSearchQuery, addToCart, removeFromCart, updateQuantity, clearCart,
-      addOrder, updateOrderStatus, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
+      addOrder, updateOrderStatus, cancelOrder, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
       login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
       favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings,
-      tasks, addTask, updateTaskStatus, removeTask
+      tasks, addTask, updateTaskStatus, updateTask, removeTask, logisticsLogs
     }}>
       {children}
     </StoreContext.Provider>

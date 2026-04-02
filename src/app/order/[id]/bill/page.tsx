@@ -150,8 +150,8 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
                         </div>
                       </td>
                       <td className="py-6 px-2 text-center font-medium">{item.quantity}</td>
-                      <td className="py-6 px-2 text-right font-medium">₹{item.price.toLocaleString('en-IN')}</td>
-                      <td className="py-6 px-2 text-right font-bold text-primary">₹{(item.price * item.quantity).toLocaleString('en-IN')}</td>
+                      <td className="py-6 px-2 text-right font-medium">Rs. {item.price.toLocaleString('en-IN')}/-</td>
+                      <td className="py-6 px-2 text-right font-bold text-primary">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</td>
                     </tr>
                   ))}
                 </tbody>
@@ -163,15 +163,15 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
               <div className="w-full md:w-80 space-y-4">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
-                  <span className="font-medium">₹{subtotal.toLocaleString('en-IN')}</span>
+                  <span className="font-medium">Rs. {subtotal.toLocaleString('en-IN')}/-</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping & Handling</span>
-                  <span className="font-medium">{shipping === 0 ? "FREE" : `₹${shipping.toLocaleString('en-IN')}`}</span>
+                  <span className="font-medium">{shipping === 0 ? "FREE" : `Rs. ${shipping.toLocaleString('en-IN')}/-`}</span>
                 </div>
                 <div className="pt-4 border-t-2 border-primary/10 flex justify-between items-center">
                   <span className="text-lg font-headline font-bold text-primary">Total Paid</span>
-                  <span className="text-2xl font-bold text-accent">₹{order.total.toLocaleString('en-IN')}</span>
+                  <span className="text-2xl font-bold text-accent">Rs. {order.total.toLocaleString('en-IN')}/-</span>
                 </div>
               </div>
             </div>

@@ -52,7 +52,7 @@ export default function CartPage() {
                       <h3 className="text-xl font-headline font-bold text-primary">{item.name}</h3>
                       <p className="text-sm text-muted-foreground">{item.style}</p>
                     </div>
-                    <p className="text-lg font-bold text-accent">₹{item.price.toLocaleString('en-IN')}</p>
+                    <p className="text-lg font-bold text-accent">Rs. {item.price.toLocaleString('en-IN')}/-</p>
                   </div>
                   
                   <div className="flex items-center justify-between mt-4">
@@ -97,18 +97,18 @@ export default function CartPage() {
               <h2 className="text-2xl font-headline font-bold text-primary mb-6">Order Summary</h2>
               
               <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span>₹{subtotal.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Shipping</span>
-                  <span className="text-green-600 font-bold">FREE</span>
-                </div>
-                <div className="pt-4 border-t flex justify-between text-xl font-bold text-primary">
-                  <span>Total</span>
-                  <span>₹{total.toLocaleString('en-IN')}</span>
-                </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>Rs. {subtotal.toLocaleString('en-IN')}/-</span>
+                  </div>
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Shipping</span>
+                    <span className="text-green-600 font-bold">FREE</span>
+                  </div>
+                  <div className="pt-4 border-t flex justify-between text-xl font-bold text-primary">
+                    <span>Total</span>
+                    <span>Rs. {total.toLocaleString('en-IN')}/-</span>
+                  </div>
               </div>
 
               <div className="mb-6 p-5 rounded-[2rem] bg-accent/5 border-2 border-accent/10 flex items-center gap-4 transition-all hover:border-accent">

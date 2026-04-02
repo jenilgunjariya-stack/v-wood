@@ -34,10 +34,19 @@ export interface Order {
   date: string;
   items: CartItem[];
   total: number;
-  status: 'Confirmed' | 'Awaiting Verification' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered';
+  status: 'Confirmed' | 'Awaiting Verification' | 'Processing' | 'Shipped' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
   customerName: string;
   customerAddress: string;
-  paymentMethod: 'Card' | 'UPI' | 'COD';
+  customerPhone: string;
+  paymentMethod: 'Card' | 'UPI' | 'COD' | 'In-Shop';
+}
+
+export interface LogisticsLog {
+  id: string;
+  deliveryBoyName: string;
+  orderId: string;
+  action: string;
+  timestamp: string;
 }
 
 export interface Employee {

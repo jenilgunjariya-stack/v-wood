@@ -95,7 +95,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
                   <span className="text-sm text-muted-foreground ml-1">({totalRatings} reviews)</span>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-accent">₹{clock.price.toLocaleString('en-IN')}</p>
+              <p className="text-2xl font-bold text-accent">Rs. {clock.price.toLocaleString('en-IN')}/-</p>
             </div>
 
             <div className="prose prose-blue mb-8">

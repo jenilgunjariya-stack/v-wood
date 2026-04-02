@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert, Heart } from "lucide-react";
+import { User, Edit, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert, Heart, X, ArrowRight } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfilePage() {
-  const { userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, orders, favorites, storeSettings, logout } = useStore();
+  const { userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, isDelivery, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, orders, favorites, storeSettings, logout, cancelOrder } = useStore();
   const [nameInput, setNameInput] = useState(userName);
   const [emailInput, setEmailInput] = useState(userEmail);
   const [photoInput, setPhotoInput] = useState(userPhoto);
@@ -83,6 +83,7 @@ export default function ProfilePage() {
       case 'Shipped': return 50;
       case 'Out for Delivery': return 75;
       case 'Delivered': return 100;
+      case 'Cancelled': return 0;
       default: return 0;
     }
   };
@@ -155,8 +156,29 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-2">Welcome, {userName}</h1>
-            <p className="text-muted-foreground text-lg">{userEmail || "Manage your artisanal collection and track your orders in real-time."}</p>
+             <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary mb-2 line-clamp-1">Welcome, {userName}</h1>
+             <p className="text-muted-foreground text-lg">{userEmail || "Artist & Collector • Manage your artisanal collection and track your orders."}</p>
+             <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-6">
+                {isAdmin && (
+                  <Badge className="bg-red-500 text-white border-none px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-red-500/20">
+                     <ShieldAlert className="h-3 w-3" /> Studio Administrator
+                  </Badge>
+                )}
+                {isDelivery && (
+                  <Badge className="bg-accent text-white border-none px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest gap-2 shadow-lg shadow-accent/20 transition-all">
+                     <Truck className="h-3 w-3" /> Logistics Partner
+                  </Badge>
+                )}
+                {(!isAdmin && !isDelivery) && (
+                  <Badge className="bg-primary/5 text-primary border-primary/10 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-widest gap-2">
+                     <User className="h-3 w-3" /> Verified Collector
+                  </Badge>
+                )}
+                <div className="h-4 w-px bg-muted mx-2 hidden sm:block" />
+                <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                   <Clock className="h-3 w-3 text-accent" /> Est. {new Date().getFullYear()}
+                </div>
+             </div>
           </div>
         </div>
 
@@ -350,45 +372,52 @@ export default function ProfilePage() {
                         <div className="flex justify-between items-end">
                           <div>
                             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">Current Status</p>
-                            <p className="text-xl font-bold text-primary">{lastOrder.status}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                              {lastOrder.status === 'Delivered' ? 'Final Status' : 'Estimated Arrival'}
-                            </p>
-                            <p className="text-xl font-bold text-accent flex items-center justify-end gap-2">
-                              <Clock className="h-5 w-5" />
-                              {getDaysToGo(lastOrder.date, lastOrder.status)}
+                            <p className={cn("text-xl font-bold flex items-center gap-2", lastOrder.status === 'Cancelled' ? "text-red-500" : "text-primary")}>
+                              {lastOrder.status === 'Cancelled' && <X className="h-5 w-5" />}
+                              {lastOrder.status}
                             </p>
                           </div>
+                          {lastOrder.status !== 'Cancelled' && (
+                            <div className="text-right">
+                              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
+                                {lastOrder.status === 'Delivered' ? 'Final Status' : 'Estimated Arrival'}
+                              </p>
+                              <p className="text-xl font-bold text-accent flex items-center justify-end gap-2">
+                                <Clock className="h-5 w-5" />
+                                {getDaysToGo(lastOrder.date, lastOrder.status)}
+                              </p>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="relative py-4">
-                          <Progress value={getStatusProgress(lastOrder.status)} className="h-3 bg-muted rounded-full" />
-                          <div className="flex justify-between mt-6">
-                            {[
-                              { label: 'Accepted', icon: PackageCheck, threshold: 25 },
-                              { label: 'Shipped', icon: Truck, threshold: 50 },
-                              { label: 'Transit', icon: Package, threshold: 75 },
-                              { label: 'Delivered', icon: CheckCircle2, threshold: 100 }
-                            ].map((step, idx) => (
-                              <div key={idx} className={cn(
-                                "flex flex-col items-center gap-2 transition-all duration-500",
-                                getStatusProgress(lastOrder.status) >= step.threshold ? "text-accent" : "text-muted-foreground/40"
-                              )}>
-                                <div className={cn(
-                                  "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
-                                  getStatusProgress(lastOrder.status) >= step.threshold ? "bg-accent/10 border-accent shadow-lg shadow-accent/20" : "bg-white border-muted"
+                        {lastOrder.status !== 'Cancelled' && (
+                          <div className="relative py-4">
+                            <Progress value={getStatusProgress(lastOrder.status)} className="h-3 bg-muted rounded-full" />
+                            <div className="flex justify-between mt-6">
+                              {[
+                                { label: 'Accepted', icon: PackageCheck, threshold: 25 },
+                                { label: 'Shipped', icon: Truck, threshold: 50 },
+                                { label: 'Transit', icon: Package, threshold: 75 },
+                                { label: 'Delivered', icon: CheckCircle2, threshold: 100 }
+                              ].map((step, idx) => (
+                                <div key={idx} className={cn(
+                                  "flex flex-col items-center gap-2 transition-all duration-500",
+                                  getStatusProgress(lastOrder.status) >= step.threshold ? "text-accent" : "text-muted-foreground/40"
                                 )}>
-                                  <step.icon className="h-5 w-5" />
+                                  <div className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                                    getStatusProgress(lastOrder.status) >= step.threshold ? "bg-accent/10 border-accent shadow-lg shadow-accent/20" : "bg-white border-muted"
+                                  )}>
+                                    <step.icon className="h-5 w-5" />
+                                  </div>
+                                  <span className="text-[10px] sm:text-xs font-bold uppercase tracking-tighter text-center">
+                                    {step.label}
+                                  </span>
                                 </div>
-                                <span className="text-[10px] sm:text-xs font-bold uppercase tracking-tighter text-center">
-                                  {step.label}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
                       {/* Order Details Grid */}
@@ -435,7 +464,7 @@ export default function ProfilePage() {
                                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Qty: {item.quantity}</p>
                                 </div>
                                 <div className="text-right">
-                                  <span className="text-xs font-bold text-accent block">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                                  <span className="text-xs font-bold text-accent block">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</span>
                                   <span className="text-[9px] text-muted-foreground italic">Item Total</span>
                                 </div>
                               </div>
@@ -445,7 +474,7 @@ export default function ProfilePage() {
                           <div className="mt-8 p-6 bg-primary/5 rounded-[2rem] border-2 border-dashed border-primary/10 flex justify-between items-center">
                             <div>
                               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Verified Payment</p>
-                              <span className="text-2xl font-bold text-primary">₹{lastOrder.total.toLocaleString('en-IN')}</span>
+                              <span className="text-2xl font-bold text-primary">Rs. {lastOrder.total.toLocaleString('en-IN')}/-</span>
                             </div>
                             <div className="flex flex-col items-center">
                               <div className="relative h-12 w-12 grayscale opacity-40">
@@ -456,6 +485,23 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
+
+                      {lastOrder.status !== 'Cancelled' && (lastOrder.status === 'Confirmed' || lastOrder.status === 'Processing' || lastOrder.status === 'Awaiting Verification') && (
+                        <div className="mt-8 pt-8 border-t border-dashed flex justify-end">
+                           <Button 
+                            variant="link" 
+                            className="text-red-500 font-bold uppercase tracking-widest text-[10px] hover:text-red-700 h-8 gap-1"
+                            onClick={() => {
+                              if (confirm("Are you sure you want to cancel this order?")) {
+                                cancelOrder(lastOrder.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Cancel Order
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center py-16 space-y-6">
@@ -499,6 +545,29 @@ export default function ProfilePage() {
                 </Button>
               </CardContent>
             </Card>
+
+            {(isAdmin || isDelivery) && (
+               <Card className="border-none shadow-2xl overflow-hidden bg-primary text-white">
+                 <CardHeader className="p-8 pb-4">
+                   <div className="flex items-center gap-3 text-accent font-bold mb-2">
+                     <ShieldCheck className="h-6 w-6" />
+                     <span className="uppercase tracking-widest text-xs">Access Granted</span>
+                   </div>
+                   <CardTitle className="font-headline text-2xl">Management Link</CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-8 pt-0 space-y-6">
+                   <p className="text-white/60 text-sm leading-relaxed">
+                     Your verified credentials provide access to the {isAdmin ? "Studio Hub" : "Logistics Portal"}.
+                   </p>
+                   <Button asChild variant="outline" className="w-full h-14 rounded-2xl bg-white/10 border-white/20 text-white hover:bg-white hover:text-primary font-bold uppercase tracking-widest text-[10px] transition-all">
+                     <Link href={isAdmin ? "/admin" : "/delivery"}>
+                       Open Dashboard
+                       <ArrowRight className="ml-2 h-4 w-4" />
+                     </Link>
+                   </Button>
+                 </CardContent>
+               </Card>
+             )}
           </div>
         </div>
       </main>

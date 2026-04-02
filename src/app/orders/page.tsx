@@ -11,7 +11,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 export default function OrdersPage() {
-  const { orders } = useStore();
+  const { orders, cancelOrder } = useStore();
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
 
   const toggleOrder = (orderId: string) => {
@@ -28,6 +28,7 @@ export default function OrdersPage() {
       case 'Processing': return 'bg-yellow-500/10 text-yellow-600 border-yellow-200';
       case 'Shipped': return 'bg-purple-500/10 text-purple-600 border-purple-200';
       case 'Delivered': return 'bg-green-500/10 text-green-600 border-green-200';
+      case 'Cancelled': return 'bg-red-500/10 text-red-600 border-red-200';
       case 'Awaiting Verification': return 'bg-amber-500/10 text-amber-600 border-amber-200';
       default: return 'bg-slate-500/10 text-slate-600 border-slate-200';
     }
@@ -103,7 +104,7 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-xl">
                       <div className="text-right">
                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none mb-1">Total Paid</p>
-                        <p className="text-3xl font-headline font-bold text-accent leading-none">₹{order.total.toLocaleString('en-IN')}</p>
+                        <p className="text-3xl font-headline font-bold text-accent leading-none">Rs. {order.total.toLocaleString('en-IN')}/-</p>
                       </div>
                     </div>
                   </div>
@@ -121,17 +122,19 @@ export default function OrdersPage() {
                         <p className="text-xl font-bold text-primary">{order.status}</p>
                       </div>
                     </div>
-                    <div className="flex-1 p-8 md:p-10 flex items-center gap-6 group/ship cursor-default transition-colors hover:bg-accent/5">
-                      <div className="h-14 w-14 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-lg shadow-accent/20">
-                        <Truck className="h-7 w-7" />
+                    {order.status !== 'Cancelled' && (
+                      <div className="flex-1 p-8 md:p-10 flex items-center gap-6 group/ship cursor-default transition-colors hover:bg-accent/5">
+                        <div className="h-14 w-14 rounded-2xl bg-accent text-accent-foreground flex items-center justify-center shrink-0 shadow-lg shadow-accent/20">
+                          <Truck className="h-7 w-7" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
+                            {order.status === 'Delivered' ? 'Arrived On' : 'Est. Arrival'}
+                          </p>
+                          <p className="text-xl font-bold text-primary">{deliveryEstimate}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">
-                          {order.status === 'Delivered' ? 'Arrived On' : 'Est. Arrival'}
-                        </p>
-                        <p className="text-xl font-bold text-primary">{deliveryEstimate}</p>
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Summary row */}
@@ -180,8 +183,8 @@ export default function OrdersPage() {
                                   </div>
                                 </div>
                                 <div className="mt-4 sm:mt-0 text-right">
-                                  <p className="text-lg font-bold text-primary tracking-tight">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
-                                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">₹{item.price.toLocaleString('en-IN')} / unit</p>
+                                  <p className="text-lg font-bold text-primary tracking-tight">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
+                                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Rs. {item.price.toLocaleString('en-IN')}/- / unit</p>
                                 </div>
                               </div>
                             ))}
@@ -217,7 +220,7 @@ export default function OrdersPage() {
                             <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10" />
                             <div className="flex justify-between items-center text-primary-foreground/60 text-[10px] font-bold uppercase tracking-widest">
                               <span>Subtotal</span>
-                              <span>₹{order.total.toLocaleString('en-IN')}</span>
+                              <span>Rs. {order.total.toLocaleString('en-IN')}/-</span>
                             </div>
                             <div className="flex justify-between items-center text-primary-foreground/60 text-[10px] font-bold uppercase tracking-widest">
                               <span>Shipping</span>
@@ -225,11 +228,28 @@ export default function OrdersPage() {
                             </div>
                             <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                               <span className="text-xl font-headline font-bold">Total Paid</span>
-                              <span className="text-2xl font-bold text-accent tracking-tighter">₹{order.total.toLocaleString('en-IN')}</span>
+                              <span className="text-2xl font-bold text-accent tracking-tighter">Rs. {order.total.toLocaleString('en-IN')}/-</span>
                             </div>
                           </div>
                         </div>
                       </div>
+
+                      {(order.status === 'Confirmed' || order.status === 'Processing' || order.status === 'Awaiting Verification') && (
+                        <div className="mt-10 pt-10 border-t border-dashed flex justify-end">
+                          <Button 
+                            variant="outline" 
+                            className="h-12 px-8 rounded-xl border-red-200 text-red-600 hover:bg-red-50 gap-2 font-bold uppercase tracking-widest text-[10px]"
+                            onClick={() => {
+                              if (confirm("Are you sure you want to cancel this order? The funds will be credited back to your original payment method within 3-5 business days.")) {
+                                cancelOrder(order.id);
+                              }
+                            }}
+                          >
+                            <Package className="h-4 w-4" />
+                            Cancel Order
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>

@@ -38,19 +38,34 @@ export default function CheckoutPage() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     address: "",
     city: "",
     zip: "",
     upiId: "",
     cardNumber: "",
+    cardName: "",
     expiry: "",
-    cvc: ""
+    cvc: "",
+    otp: ""
   });
+  const [otpMode, setOtpMode] = useState(false);
+  const [timer, setTimer] = useState(180); // 3 minutes
 
   useEffect(() => {
     setMounted(true);
     setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
   }, []);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (paymentStatus === 'awaiting_bank' && paymentMethod === 'UPI' && !isMobile) {
+      interval = setInterval(() => {
+        setTimer(prev => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [paymentStatus, paymentMethod, isMobile]);
 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = 0; // Universal Free Shipping
@@ -68,16 +83,25 @@ export default function CheckoutPage() {
   const isCardNumberValid = (num: string) => /^\d{16}$/.test(num.replace(/\s/g, ''));
   const isExpiryValid = (exp: string) => /^(0[1-9]|1[0-2])\/\d{2}$/.test(exp);
   const isCvcValid = (cvc: string) => /^\d{3}$/.test(cvc);
+  const isPhoneValid = (phone: string) => /^\+?(\d{10,12})$/.test(phone.replace(/\s/g, ''));
 
-  const isStep1Valid = formData.firstName && formData.lastName && formData.address && formData.city && formData.zip;
+  const isStep1Valid = formData.firstName && formData.lastName && formData.phone && formData.address && formData.city && formData.zip;
 
   const isPaymentValid = () => {
     if (paymentMethod === 'COD') return true;
     if (paymentMethod === 'UPI') return !!upiApp && isUpiValid(formData.upiId);
     if (paymentMethod === 'Card') {
-      return isCardNumberValid(formData.cardNumber) && isExpiryValid(formData.expiry) && isCvcValid(formData.cvc);
+      return isCardNumberValid(formData.cardNumber) && isExpiryValid(formData.expiry) && isCvcValid(formData.cvc) && formData.cardName.length > 2;
     }
     return false;
+  };
+
+  const upiIntentUrl = `upi://pay?pa=${storeSettings.upiId}&pn=${encodeURIComponent(storeSettings.ownerName)}&am=${total}&cu=INR&tn=${encodeURIComponent('V-WOOD Order Payment')}`;
+  const getDynamicUpiUrl = (overrideApp?: string) => {
+    const appToUse = overrideApp || upiApp;
+    const selectedApp = UPI_APPS.find(a => a.id === appToUse);
+    const base = selectedApp?.scheme || 'upi://pay';
+    return `${base}?pa=${storeSettings.upiId}&pn=${encodeURIComponent(storeSettings.ownerName)}&am=${total}&cu=INR&tn=${encodeURIComponent('V-WOOD Order Payment')}`;
   };
 
   const handleCompleteOrder = async (overrideUpiApp?: string) => {
@@ -96,62 +120,89 @@ export default function CheckoutPage() {
       return;
     }
     
+    if (paymentMethod === 'Card' && !isPaymentValid()) {
+      toast({
+        variant: "destructive",
+        title: "Incomplete Card Details",
+        description: "Please provide all required card information.",
+      });
+      return;
+    }
+    
     if (paymentMethod === 'UPI' && !isUpiValid(formData.upiId)) {
        toast({
         variant: "destructive",
         title: "Invalid UPI ID",
-        description: "Please enter a valid UPI ID (e.g. name@upi) before sending the request.",
+        description: "Please enter a valid UPI ID (e.g. name@upi) to proceed.",
       });
       return;
     }
 
     setIsProcessing(true);
 
-    const selectedApp = UPI_APPS.find(a => a.id === activeUpiApp);
-    const isMatch = selectedApp?.handles.some(h => formData.upiId.toLowerCase().endsWith(h));
+    const activeApp = overrideUpiApp || upiApp;
 
     if (paymentMethod === 'UPI') {
-      const intentUrl = getDynamicUpiUrl(activeUpiApp || 'any');
+      const intentUrl = getDynamicUpiUrl(activeApp || 'any');
       
       if (isMobile) {
-        // Same Device Flow
-        setPaymentStatus('requesting');
+        // Same Device Flow - Flipkart-style Auto-Open
+        setPaymentStatus('requesting'); // "Opening UPI App..."
         window.location.href = intentUrl;
-        await new Promise(resolve => setTimeout(resolve, 500));
         
-        setPaymentStatus('verifying'); // "Processing In-App Payment"
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait for user to come back or simulated delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setPaymentStatus('verifying'); // "Processing In-App Payment..."
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setPaymentStatus('admin_verification'); // "Finalizing with UPI Network..."
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        finalizeOrder();
        } else {
-        // Another Device / Collect Request Flow
-        setPaymentStatus('requesting'); // "Sending Payment Request..."
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Desktop / Another Device Flow - Flipkart-style Collect Request
+        setPaymentStatus('awaiting_bank'); // "Sending Collect Request to App..."
+        await new Promise(resolve => setTimeout(resolve, 2000));
         
-        setPaymentStatus('request_processing'); // "Linking with NPCI..."
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setPaymentStatus('awaiting_bank'); // "Sending request to user's bank..."
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setPaymentStatus('verifying'); // "Confirming Receipt..."
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        setPaymentStatus('admin_verification'); // "Payment Received!"
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // At this point, we show the "Waiting for Payment" screen (via paymentStatus === 'awaiting_bank')
+        // The simulation pauses here until the user clicks "I have successfully paid"
+        setIsProcessing(false); 
       }
     } else if (paymentMethod === 'Card') {
-      // 1. Connect to Secure Bank Platform
-      setPaymentStatus('requesting'); // Will show "Connecting to Secured Payments..."
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      // 1. Handshake with Bank
+      setPaymentStatus('requesting'); // "Initializing Secure Handshake..."
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // 2. Simulate User Payment (Deduction)
-      setPaymentStatus('verifying'); // Will show "Deducting funds from your bank..."
-      await new Promise(resolve => setTimeout(resolve, 3500));
+      // 2. Trigger OTP Requirement
+      setPaymentStatus('awaiting_bank'); // "Requesting OTP from Bank..."
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // 3. Simulate Transfer to Admin
-      setPaymentStatus('admin_verification'); // Will show "Transferring to V-WOOD Admin..."
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // 3. Enter OTP Phase (This is handled by a separate state to show the OTP UI)
+      setOtpMode(true);
+      // Logic pauses here while OtpMode is true. 
+      // handleOtpSubmit will continue the process.
+    } else if (paymentMethod === 'COD') {
+      // Instant Confirmation for Cash on Delivery
+      finalizeOrder();
     }
+  };
 
+  const handleOtpSubmit = async (otp: string) => {
+    if (otp.length < 6) return;
+    
+    setOtpMode(false);
+    setIsProcessing(true);
+    
+    // 4. Verification of OTP
+    setPaymentStatus('verifying'); // "Authenticating 3D Secure..."
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // 5. Deduction from User Account
+    setPaymentStatus('request_processing'); // "Capturing Funds from Account..."
+    await new Promise(resolve => setTimeout(resolve, 2500));
+    
+    // 6. Settlement with Admin
+    setPaymentStatus('admin_verification'); // "Settling Transaction with V-WOOD Admin..."
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     finalizeOrder();
   };
 
@@ -162,43 +213,27 @@ export default function CheckoutPage() {
       date: new Date().toLocaleDateString('en-IN', {
         year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
       }),
-      items: [...cart],
+      items: cart,
       total: total,
-      status: (paymentMethod === 'COD' || paymentMethod === 'UPI') ? 'Confirmed' : 'Awaiting Verification',
+      status: (paymentMethod === 'COD' || paymentMethod === 'UPI' || paymentMethod === 'Card') ? 'Confirmed' : 'Awaiting Verification',
       customerName: `${formData.firstName} ${formData.lastName}`,
       customerAddress: `${formData.address}, ${formData.city}, ${formData.zip}`,
+      customerPhone: formData.phone,
       paymentMethod: paymentMethod
     };
     
     addOrder(newOrder);
     setStep(3);
     setIsProcessing(false);
-    clearCart();
     setPaymentStatus('success');
+    clearCart();
     
     toast({
-      title: (paymentMethod === 'COD' || paymentMethod === 'UPI') ? "Order Placed Successfully" : "Payment Submitted - Awaiting Verification",
-      description: (paymentMethod === 'COD' || paymentMethod === 'UPI') ? "Your order is being processed." : "The V-WOOD admin will confirm your order once the payment has been verified.",
+      title: "Order Placed Successfully",
+      description: paymentMethod === 'COD' 
+        ? "Your order has been confirmed. Please keep cash ready for delivery."
+        : "Payment confirmed. Your V-WOOD artisanal piece is being prepared.",
     });
-  };
-
-  const handleManualPaymentConfirmation = async () => {
-    setPaymentStatus('verifying');
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    setPaymentStatus('admin_verification');
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    finalizeOrder();
-  };
-
-  const upiIntentUrl = `upi://pay?pa=${storeSettings.upiId}&pn=${encodeURIComponent(storeSettings.ownerName)}&am=${total}&cu=INR&tn=${encodeURIComponent('V-WOOD Order Payment')}`;
-
-
-
-  const getDynamicUpiUrl = (overrideApp?: string) => {
-    const appToUse = overrideApp || upiApp;
-    const selectedApp = UPI_APPS.find(a => a.id === appToUse);
-    const base = selectedApp?.scheme || 'upi://pay';
-    return `${base}?pa=${storeSettings.upiId}&pn=${encodeURIComponent(storeSettings.ownerName)}&am=${total}&cu=INR&tn=${encodeURIComponent('V-WOOD Order Payment')}`;
   };
 
   if (!mounted) return null;
@@ -360,6 +395,10 @@ export default function CheckoutPage() {
                     <Input id="email" type="email" placeholder="john@example.com" value={formData.email} onChange={handleInputChange} className="h-12 rounded-xl" />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="phone" className={cn(formData.phone && !isPhoneValid(formData.phone) && "text-destructive")}>Phone Number</Label>
+                    <Input id="phone" placeholder="+91 00000 00000" value={formData.phone} onChange={handleInputChange} className="h-12 rounded-xl" />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="address">Full Shipping Address</Label>
                     <Input id="address" placeholder="123 Wood Street" value={formData.address} onChange={handleInputChange} className="h-12 rounded-xl" />
                   </div>
@@ -395,7 +434,6 @@ export default function CheckoutPage() {
                     onValueChange={(val) => {
                       const method = val as 'Card' | 'UPI' | 'COD';
                       setPaymentMethod(method);
-                      if (method === 'UPI') setUpiStep('app');
                     }}
                     className="grid grid-cols-1 sm:grid-cols-3 gap-4"
                     disabled={isProcessing}
@@ -435,112 +473,151 @@ export default function CheckoutPage() {
                   <div className="space-y-6 pt-6 border-t">
                     {paymentMethod === 'UPI' && (
                       <div className="space-y-8 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="space-y-6">
-                            {!upiApp ? (
-                              <div className="space-y-4">
-                                <Label className="text-lg font-bold flex items-center gap-2">
-                                  <Smartphone className="h-5 w-5 text-accent" /> Choose your UPI App
-                                </Label>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                                  {UPI_APPS.map((app) => (
-                                    <Button
-                                      key={app.id}
-                                      variant="outline"
-                                      className={cn(
-                                        "flex flex-col items-center justify-center p-4 h-24 rounded-2xl border-2 transition-all hover:border-accent hover:bg-accent/5",
-                                        upiApp === app.id ? "border-accent bg-accent/10" : "border-muted"
-                                      )}
-                                      onClick={() => setUpiApp(app.id)}
-                                    >
-                                      <div style={{ color: app.color }} className="mb-2">
-                                        {app.icon}
-                                      </div>
-                                      <span className="text-[10px] font-bold uppercase tracking-wider">{app.name}</span>
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-6">
-                                <div className="flex items-center justify-between p-4 bg-accent/5 rounded-2xl border border-accent/20">
-                                  <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-white rounded-xl shadow-sm text-accent">
-                                      {UPI_APPS.find(a => a.id === upiApp)?.icon}
-                                    </div>
-                                    <div>
-                                      <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Paying with</p>
-                                      <p className="font-bold text-primary">{UPI_APPS.find(a => a.id === upiApp)?.name}</p>
-                                      <p className="text-[10px] text-accent font-bold mt-1">
-                                        {upiApp === 'gpay' ? (userBankName || "Bank not available") : ""}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <Button variant="ghost" size="sm" onClick={() => setUpiApp(null)} className="text-accent underline font-bold h-8">
-                                    Change App
-                                  </Button>
-                                </div>
+                        {paymentStatus === 'awaiting_bank' && !isMobile ? (
+                          <div className="p-8 bg-accent/5 rounded-[2.5rem] border-2 border-accent/20 space-y-8 text-center relative overflow-hidden">
+                             <div className="absolute top-0 right-0 p-4">
+                                <div className="text-2xl font-black text-accent/20">0{Math.floor(timer/60)}:{String(timer%60).padStart(2, '0')}</div>
+                             </div>
+                             
+                             <div className="space-y-4">
+                               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-xl border-4 border-accent/10">
+                                 <Smartphone className="h-10 w-10 text-accent animate-bounce" />
+                               </div>
+                               <h3 className="text-2xl font-headline font-bold text-primary">Approve on {upiApp ? UPI_APPS.find(a => a.id === upiApp)?.name : 'UPI App'}</h3>
+                               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                                 We've sent a payment request to <b>{formData.upiId}</b>. Open your UPI app and approve the request to complete your order.
+                               </p>
+                             </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                                  <div className="space-y-6">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="upiId" className={cn("font-bold text-xs uppercase tracking-widest text-muted-foreground", formData.upiId && !isUpiValid(formData.upiId) && "text-destructive")}>
-                                        Enter your UPI ID
-                                      </Label>
-                                      <Input 
-                                        id="upiId" 
-                                        placeholder="yourname@upi" 
-                                        value={formData.upiId} 
-                                        onChange={handleInputChange} 
-                                        className={cn(
-                                          "h-12 rounded-xl text-lg",
-                                          formData.upiId && !isUpiValid(formData.upiId) ? "border-destructive" : "focus:border-accent"
-                                        )}
-                                        disabled={isProcessing}
-                                      />
-                                    </div>
-                                    <div className="p-4 bg-muted/30 rounded-2xl border space-y-3">
-                                      <div className="flex items-start gap-3">
-                                        <ShieldCheck className="h-5 w-5 text-accent shrink-0" />
-                                        <div className="space-y-1">
-                                          <p className="text-xs font-bold uppercase tracking-wider text-primary">Admin Payment Details</p>
-                                          <div className="space-y-1">
-                                            <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Name:</span> {storeSettings.ownerName}</p>
-                                            <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">UPI ID:</span> {storeSettings.upiId}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Your UPI ID</p>
-                                      <p className="text-sm font-bold text-primary">{formData.upiId}</p>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex flex-col items-center justify-center p-6 bg-white rounded-[2.5rem] border-2 border-dashed border-accent/20 shadow-xl relative group">
-                                    <div className="relative w-48 h-48 mb-4 overflow-hidden rounded-2xl border-4 border-white shadow-lg bg-white p-2 flex items-center justify-center">
-                                      <img 
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiIntentUrl)}`}
-                                        alt="Payment QR Code"
-                                        className="max-w-full max-h-full object-contain"
-                                        onError={(e) => {
-                                          (e.target as HTMLImageElement).src = "https://placehold.co/400x400?text=Scan+to+Pay";
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="flex items-center gap-2 text-accent font-bold">
-                                      <QrCode className="h-4 w-4" />
-                                      <span className="text-[10px] uppercase tracking-widest">Scan to Pay Instantly</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                             <div className="space-y-4">
+                               <div className="flex items-center justify-center gap-3 p-4 bg-white/50 rounded-2xl border border-accent/10 text-xs font-bold uppercase tracking-widest text-primary">
+                                 <Info className="h-4 w-4 text-accent" />
+                                 ₹{total.toLocaleString('en-IN')} request expires in {Math.floor(timer/60)}m {timer%60}s
+                               </div>
+                               <Button 
+                                 className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-2xl transition-all hover:scale-[1.02] active:scale-95"
+                                 onClick={async () => {
+                                   setIsProcessing(true);
+                                   setPaymentStatus('verifying');
+                                   await new Promise(r => setTimeout(r, 2500));
+                                   setPaymentStatus('admin_verification');
+                                   await new Promise(r => setTimeout(r, 2000));
+                                   finalizeOrder();
+                                 }}
+                               >
+                                 I have successfully paid
+                               </Button>
+                               <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest cursor-pointer hover:text-accent transition-colors" onClick={() => setPaymentStatus('idle')}>
+                                 Change Payment Method
+                               </p>
+                             </div>
                           </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                            <div className="space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="upiId" className={cn("font-bold text-xs uppercase tracking-widest text-muted-foreground", formData.upiId && !isUpiValid(formData.upiId) && "text-destructive")}>
+                                  Step 1: Enter your UPI ID
+                                </Label>
+                                <div className="relative">
+                                  <Input 
+                                    id="upiId" 
+                                    placeholder="name@bank" 
+                                    value={formData.upiId} 
+                                    onChange={handleInputChange} 
+                                    className={cn(
+                                      "h-14 rounded-xl text-lg font-medium pr-24",
+                                      formData.upiId && !isUpiValid(formData.upiId) ? "border-destructive" : "focus:border-accent"
+                                    )}
+                                    disabled={isProcessing}
+                                  />
+                                  {isUpiValid(formData.upiId) && (
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-full animate-in fade-in zoom-in">
+                                      <CheckCircle className="h-3 w-3" /> VERIFIED
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {isUpiValid(formData.upiId) && (
+                                <div className="space-y-4 animate-in fade-in zoom-in duration-300">
+                                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                                    Step 2: Choose your UPI App
+                                  </Label>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {UPI_APPS.map((app) => (
+                                      <Button
+                                        key={app.id}
+                                        variant="outline"
+                                        className={cn(
+                                          "flex flex-col items-center justify-center p-4 h-24 rounded-2xl border-2 transition-all hover:border-accent hover:bg-accent/5",
+                                          upiApp === app.id ? "border-accent bg-accent/10" : "border-muted"
+                                        )}
+                                        onClick={() => {
+                                          setUpiApp(app.id);
+                                          if (isMobile) handleCompleteOrder(app.id);
+                                        }}
+                                        disabled={isProcessing}
+                                      >
+                                        <div style={{ color: app.color }} className="mb-2">
+                                          {app.icon}
+                                        </div>
+                                        <span className="text-[10px] font-bold uppercase tracking-wider">{app.name}</span>
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="p-4 bg-muted/30 rounded-2xl border space-y-3">
+                                <div className="flex items-start gap-3">
+                                  <ShieldCheck className="h-5 w-5 text-accent shrink-0" />
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-bold uppercase tracking-wider text-primary">Merchant Details (Admin)</p>
+                                    <div className="space-y-1">
+                                      <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Merchant:</span> {storeSettings.ownerName}</p>
+                                      <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">UPI ID:</span> {storeSettings.upiId}</p>
+                                      <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Amount:</span> ₹{total.toLocaleString('en-IN')}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-[2.5rem] border-2 border-dashed border-accent/20 shadow-xl relative group">
+                              <div className="relative w-56 h-56 mb-4 overflow-hidden rounded-2xl border-4 border-white shadow-lg bg-white p-2 flex items-center justify-center">
+                                <img 
+                                  src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(upiIntentUrl)}`}
+                                  alt="Payment QR Code"
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2 text-accent font-bold">
+                                <QrCode className="h-5 w-5" />
+                                <span className="text-[10px] uppercase tracking-widest font-black">Scan to Pay Instantly</span>
+                              </div>
+                              <p className="text-[9px] text-muted-foreground mt-3 text-center uppercase tracking-tighter">
+                                {isMobile ? "Direct redirect initiated" : "Or use Another Device flow via ID"}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
-                    {paymentMethod === 'Card' && (
+                    {paymentMethod === 'Card' && !otpMode && (
                       <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="space-y-2">
+                          <Label htmlFor="cardName">Cardholder Name</Label>
+                          <Input 
+                            id="cardName" 
+                            placeholder="J NOAH" 
+                            value={formData.cardName} 
+                            onChange={handleInputChange} 
+                            className="h-12 rounded-xl text-lg uppercase font-medium"
+                            disabled={isProcessing}
+                          />
+                        </div>
                         <div className="space-y-2">
                           <Label htmlFor="cardNumber" className={cn(formData.cardNumber && !isCardNumberValid(formData.cardNumber) && "text-destructive")}>
                             Card Number
@@ -567,6 +644,53 @@ export default function CheckoutPage() {
                             <Input id="cvc" placeholder="123" value={formData.cvc} onChange={handleInputChange} className="h-12 rounded-xl" disabled={isProcessing} />
                           </div>
                         </div>
+                        <div className="p-4 bg-muted/30 rounded-2xl border border-dashed flex items-center gap-3">
+                          <ShieldAlert className="h-5 w-5 text-accent shrink-0" />
+                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">Secured by 256-bit SSL encryption. You will be redirected to your bank's 3D-Secure page for OTP verification.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {paymentMethod === 'Card' && otpMode && (
+                      <div className="space-y-8 animate-in zoom-in duration-500 py-6">
+                        <div className="text-center space-y-3">
+                          <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-accent/20">
+                            <Clock className="h-8 w-8 text-accent animate-pulse" />
+                          </div>
+                          <h3 className="text-xl font-headline font-bold text-primary">3D Secure OTP</h3>
+                          <p className="text-xs text-muted-foreground max-w-xs mx-auto">An OTP has been sent to your registered mobile number ending in •••• 8352</p>
+                        </div>
+
+                        <div className="max-w-[240px] mx-auto space-y-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="otp" className="sr-only">Enter OTP</Label>
+                            <Input 
+                              id="otp" 
+                              placeholder="• • • • • •" 
+                              maxLength={6}
+                              value={formData.otp} 
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '');
+                                setFormData(prev => ({ ...prev, otp: val }));
+                              }}
+                              className="h-16 rounded-2xl text-center text-3xl font-bold tracking-[0.5em] border-2 focus:border-accent"
+                            />
+                          </div>
+                          <Button 
+                            className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl transition-all"
+                            onClick={() => handleOtpSubmit(formData.otp)}
+                            disabled={formData.otp.length < 6}
+                          >
+                            Verify & Pay ₹{total.toLocaleString('en-IN')}
+                          </Button>
+                          <p className="text-[10px] text-center font-bold text-accent uppercase tracking-widest cursor-pointer hover:underline">Resend OTP</p>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-6 pt-4 border-t border-dashed grayscale opacity-50">
+                          <div className="text-[10px] font-bold">VISA</div>
+                          <div className="text-[10px] font-bold">Mastercard</div>
+                          <div className="text-[10px] font-bold">Rupay</div>
+                        </div>
                       </div>
                     )}
 
@@ -576,7 +700,7 @@ export default function CheckoutPage() {
                           <Banknote className="h-10 w-10 text-accent" />
                         </div>
                         <h3 className="text-xl font-headline font-bold text-primary">Cash on Delivery</h3>
-                        <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto">Pay ₹{total.toLocaleString('en-IN')} in cash when your artisanal piece arrives.</p>
+                        <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto">Pay Rs. {total.toLocaleString('en-IN')}/- in cash when your artisanal piece arrives.</p>
                       </div>
                     )}
 
@@ -597,7 +721,8 @@ export default function CheckoutPage() {
                              paymentStatus === 'admin_verification' ? 'Admin Verifying...' : 'Verifying Payment...'}
                           </>
                         ) : (
-                          paymentMethod === 'UPI' ? 'Pay Now & Confirm' : 'Complete Purchase'
+                          paymentMethod === 'UPI' ? 'Pay Now & Confirm' : 
+                          paymentMethod === 'COD' ? 'Confirm Order' : 'Complete Purchase'
                         )}
                       </Button>
                     </div>
@@ -625,7 +750,7 @@ export default function CheckoutPage() {
                           <p className="text-[10px] text-primary-foreground/60">Qty: {item.quantity}</p>
                         </div>
                       </div>
-                      <p className="font-bold text-sm">₹{(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                      <p className="font-bold text-sm">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
                     </div>
                   ))}
                 </div>
@@ -633,7 +758,7 @@ export default function CheckoutPage() {
                 <div className="space-y-4 border-t border-white/10 pt-6">
                   <div className="flex justify-between text-sm text-primary-foreground/60">
                     <span>Subtotal</span>
-                    <span className="font-bold">₹{subtotal.toLocaleString('en-IN')}</span>
+                    <span className="font-bold">Rs. {subtotal.toLocaleString('en-IN')}/-</span>
                   </div>
                   <div className="flex justify-between text-sm text-primary-foreground/60">
                     <span>Shipping</span>
@@ -641,7 +766,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-2xl font-bold pt-4 border-t border-white/20 text-white">
                     <span>Total</span>
-                    <span>₹{total.toLocaleString('en-IN')}</span>
+                    <span>Rs. {total.toLocaleString('en-IN')}/-</span>
                   </div>
                 </div>
 

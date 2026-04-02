@@ -31,24 +31,31 @@ export default function LoginPage() {
       return;
     }
 
-    // Check for admin security code
+    // Check for role-based security pins
     const isAdmin = password === "261106";
+    const isDelivery = password === "12345";
 
-    login(name, isAdmin);
+    login(name, isAdmin, isDelivery);
     
     if (isAdmin) {
       toast({
         title: "Admin Access Granted",
         description: `Welcome back, ${name}. Dashboard access enabled.`,
       });
+      router.push("/admin");
+    } else if (isDelivery) {
+      toast({
+        title: "Logistics Access Granted",
+        description: `Welcome back, ${name}. Fulfillment dashboard ready.`,
+      });
+      router.push("/delivery");
     } else {
       toast({
         title: "Welcome!",
         description: `Successfully signed in as ${name}.`,
       });
+      router.push("/");
     }
-    
-    router.push("/");
   };
 
   return (
