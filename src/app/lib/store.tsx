@@ -82,7 +82,7 @@ const INITIAL_EMPLOYEES: Employee[] = [
 
 const INITIAL_SETTINGS: StoreSettings = {
   name: "V-WOOD QUARTZ",
-  address: "7-lati plot sanala road morbi-363641",
+  address: "6/7-Lati Plot Sanala Road Morbi-363641",
   email: "support@vwoodquartz.com",
   phone: "+91 9727408352",
   openingHours: "8:00 AM - 6:00 PM (Closed on Wednesdays)",
@@ -112,6 +112,7 @@ interface StoreContextType {
   addRating: (rating: Omit<Rating, 'id' | 'date'>) => void;
   getAverageRating: (productId: string) => number;
   getProductRatings: (productId: string) => Rating[];
+  getUserRating: (productId: string) => Rating | undefined;
   setSearchQuery: (query: string) => void;
   addToCart: (product: Clock) => void;
   removeFromCart: (id: string) => void;
@@ -172,22 +173,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedCart = localStorage.getItem('timely_finds_cart');
     if (savedCart) {
-      try { setCart(JSON.parse(savedCart)); } catch (e) {}
+      try { setCart(JSON.parse(savedCart)); } catch (e) { }
     }
-    
+
     const savedProducts = localStorage.getItem('timely_finds_products');
     if (savedProducts) {
-      try { setProducts(JSON.parse(savedProducts)); } catch (e) {}
+      try { setProducts(JSON.parse(savedProducts)); } catch (e) { }
     }
 
     const savedOrders = localStorage.getItem('timely_finds_orders');
     if (savedOrders) {
-      try { setOrders(JSON.parse(savedOrders)); } catch (e) {}
+      try { setOrders(JSON.parse(savedOrders)); } catch (e) { }
     }
 
     const savedEmployees = localStorage.getItem('timely_finds_employees');
     if (savedEmployees) {
-      try { setEmployees(JSON.parse(savedEmployees)); } catch (e) {}
+      try { setEmployees(JSON.parse(savedEmployees)); } catch (e) { }
     }
 
     const savedName = localStorage.getItem('timely_finds_user_name');
@@ -213,35 +214,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const savedSettings = localStorage.getItem('timely_finds_settings');
     if (savedSettings) {
-      try { setStoreSettingsState(JSON.parse(savedSettings)); } catch (e) {}
+      try { setStoreSettingsState(JSON.parse(savedSettings)); } catch (e) { }
     }
 
     const savedFavorites = localStorage.getItem('timely_finds_favorites');
     if (savedFavorites) {
-      try { setFavorites(JSON.parse(savedFavorites)); } catch (e) {}
+      try { setFavorites(JSON.parse(savedFavorites)); } catch (e) { }
     }
 
     const savedRatings = localStorage.getItem('timely_finds_ratings');
     if (savedRatings) {
-      try { setRatings(JSON.parse(savedRatings)); } catch (e) {}
+      try { setRatings(JSON.parse(savedRatings)); } catch (e) { }
     }
 
     const savedTasks = localStorage.getItem('timely_finds_tasks');
     if (savedTasks) {
-      try { setTasks(JSON.parse(savedTasks)); } catch (e) {}
+      try { setTasks(JSON.parse(savedTasks)); } catch (e) { }
     }
 
     const savedLogs = localStorage.getItem('timely_finds_logs');
     if (savedLogs) {
-      try { setLogisticsLogs(JSON.parse(savedLogs)); } catch (e) {}
+      try { setLogisticsLogs(JSON.parse(savedLogs)); } catch (e) { }
     }
-    
+
     setIsHydrated(true);
 
     // Sync state across multiple tabs instantly
     const handleStorageChange = (e: StorageEvent) => {
       if (!e.newValue) return;
-      
+
       try {
         const value = JSON.parse(e.newValue);
         switch (e.key) {
@@ -289,7 +290,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateQuantity = (id: string, quantity: number) => {
     const product = products.find(p => p.id === id);
     if (!product) return;
-    
+
     if (quantity <= 0) {
       removeFromCart(id);
     } else if (quantity <= product.stock) {
@@ -303,7 +304,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = [order, ...orders];
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
-    
+
     const updatedProducts = products.map(p => {
       const orderItem = order.items.find(item => item.id === p.id);
       if (orderItem) {
@@ -367,10 +368,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateEmployeeStatus = (empId: string, status: Employee['paymentStatus']) => {
     const newEmployees = employees.map(emp => {
       if (emp.id === empId) {
-        return { 
-          ...emp, 
-          paymentStatus: status, 
-          lastPaidDate: status === 'Paid' ? new Date().toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' }) : undefined 
+        return {
+          ...emp,
+          paymentStatus: status,
+          lastPaidDate: status === 'Paid' ? new Date().toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' }) : undefined
         };
       }
       return emp;
@@ -482,14 +483,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (name: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
-    setUserName(name);
+    setUserNameState(name);
+    localStorage.setItem('timely_finds_user_name', name);
     setIsAdminState(isAdminUser);
     setIsDeliveryState(isDeliveryUser);
     localStorage.setItem('timely_finds_is_admin', isAdminUser.toString());
     localStorage.setItem('timely_finds_is_delivery', isDeliveryUser.toString());
+
+    // Restore per-user profile data if previously saved
+    try {
+      const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
+      const profiles: Record<string, { email: string; photo: string; address: string; bankName: string }> =
+        profilesRaw ? JSON.parse(profilesRaw) : {};
+      const saved = profiles[name];
+      if (saved) {
+        setUserEmailState(saved.email || "");
+        setUserPhotoState(saved.photo || "");
+        setUserAddressState(saved.address || "");
+        setUserBankNameState(saved.bankName || "");
+        // Also keep flat keys in sync for storage cross-tab
+        localStorage.setItem('timely_finds_user_email', saved.email || "");
+        localStorage.setItem('timely_finds_user_photo', saved.photo || "");
+        localStorage.setItem('timely_finds_user_address', saved.address || "");
+        localStorage.setItem('timely_finds_user_bank', saved.bankName || "");
+      } else {
+        // New user — clear any stale profile values from a previous session
+        setUserEmailState("");
+        setUserPhotoState("");
+        setUserAddressState("");
+        setUserBankNameState("");
+        localStorage.setItem('timely_finds_user_email', "");
+        localStorage.setItem('timely_finds_user_photo', "");
+        localStorage.setItem('timely_finds_user_address', "");
+        localStorage.setItem('timely_finds_user_bank', "");
+      }
+    } catch (e) { }
+  };
+
+  /** Persist current user's profile keyed by their name before clearing session */
+  const saveCurrentUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
+    if (!name || name === 'Guest') return;
+    try {
+      const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
+      const profiles: Record<string, { email: string; photo: string; address: string; bankName: string }> =
+        profilesRaw ? JSON.parse(profilesRaw) : {};
+      profiles[name] = { email, photo, address, bankName };
+      localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
+    } catch (e) { }
   };
 
   const logout = () => {
+    // Save current profile data indexed by username before clearing
+    saveCurrentUserProfile(userName, userEmail, userPhoto, userAddress, userBankName);
+
     setUserNameState("Guest");
     setUserEmailState("");
     setUserPhotoState("");
@@ -501,6 +547,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('timely_finds_user_email');
     localStorage.removeItem('timely_finds_user_photo');
     localStorage.removeItem('timely_finds_user_address');
+    localStorage.removeItem('timely_finds_user_bank');
     localStorage.removeItem('timely_finds_is_admin');
     localStorage.removeItem('timely_finds_is_delivery');
   };
@@ -508,6 +555,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const isFavorite = (id: string) => favorites.some(fav => fav.id === id);
 
   const addRating = (ratingData: Omit<Rating, 'id' | 'date'>) => {
+    // Remove any previous rating by the same user for the same product before adding
+    const filteredRatings = ratings.filter(
+      r => !(r.productId === ratingData.productId && r.userName === ratingData.userName)
+    );
     const newRating: Rating = {
       ...ratingData,
       id: `RAT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
@@ -515,7 +566,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     };
-    const newRatings = [...ratings, newRating];
+    const newRatings = [...filteredRatings, newRating];
     setRatings(newRatings);
     localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
   };
@@ -529,6 +580,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const getProductRatings = (productId: string) => {
     return ratings.filter(r => r.productId === productId);
+  };
+
+  /** Returns the rating submitted by the currently logged-in user for a given product */
+  const getUserRating = (productId: string): Rating | undefined => {
+    if (!userName || userName === 'Guest') return undefined;
+    return ratings.find(r => r.productId === productId && r.userName === userName);
   };
 
   const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
@@ -570,7 +627,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setSearchQuery, addToCart, removeFromCart, updateQuantity, clearCart,
       addOrder, updateOrderStatus, cancelOrder, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
       login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
-      favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings,
+      favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings, getUserRating,
       tasks, addTask, updateTaskStatus, updateTask, removeTask, logisticsLogs
     }}>
       {children}

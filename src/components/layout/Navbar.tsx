@@ -88,38 +88,46 @@ export function Navbar() {
     { name: "Photo Frame", icon: ImageIcon, href: "/#collection" },
   ];
 
-  const NavLinks = () => (
-    <div className="flex items-center gap-10">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all outline-none">
-            Shopping
-            <ChevronDown className="h-3 w-3" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 p-2 rounded-2xl shadow-2xl border-none glass-card">
-          {ShoppingOptions.map((opt) => (
-            <DropdownMenuItem key={opt.name} asChild>
-              <Link href={opt.href} className="flex items-center gap-4 p-4 cursor-pointer rounded-xl hover:bg-accent/10 hover:text-accent transition-all">
-                <opt.icon className="h-4 w-4" />
-                <span className="font-bold text-[10px] uppercase tracking-widest">{opt.name}</span>
-              </Link>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About Us</Link>
-      {userName !== "Guest" && (
-        <Link href="/orders" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">Order History</Link>
-      )}
-      {isAdmin && (
-        <Link href="/admin" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Admin Dashboard</Link>
-      )}
-      {isDelivery && (
-        <Link href="/delivery" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Logistics Portal</Link>
-      )}
-    </div>
-  );
+  const NavLinks = () => {
+    if (isDelivery) {
+      return (
+        <div className="flex items-center gap-10">
+          <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About</Link>
+          <Link href="/delivery" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Logistics Portal</Link>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all outline-none">
+              Shopping
+              <ChevronDown className="h-3 w-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-56 p-2 rounded-2xl shadow-2xl border-none glass-card">
+            {ShoppingOptions.map((opt) => (
+              <DropdownMenuItem key={opt.name} asChild>
+                <Link href={opt.href} className="flex items-center gap-4 p-4 cursor-pointer rounded-xl hover:bg-accent/10 hover:text-accent transition-all">
+                  <opt.icon className="h-4 w-4" />
+                  <span className="font-bold text-[10px] uppercase tracking-widest">{opt.name}</span>
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About Us</Link>
+        {userName !== "Guest" && (
+          <Link href="/orders" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">Order History</Link>
+        )}
+        {isAdmin && (
+          <Link href="/admin" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Admin Dashboard</Link>
+        )}
+      </div>
+    );
+  };
 
   if (theme === null) return null;
 
@@ -157,43 +165,45 @@ export function Navbar() {
             {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
 
-          <div className={cn(
-            "flex items-center transition-all duration-500",
-            isSearchOpen ? "w-48 sm:w-72" : "w-12"
-          )}>
-            {isSearchOpen ? (
-              <div className="relative w-full">
-                <Input
-                  autoFocus
-                  placeholder="Find a timepiece..."
-                  className="h-12 pr-12 rounded-full border-none bg-muted/50 focus:bg-white focus:ring-accent shadow-inner text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onBlur={() => !searchQuery && setIsSearchOpen(false)}
-                />
+          {!isDelivery && (
+            <div className={cn(
+              "flex items-center transition-all duration-500",
+              isSearchOpen ? "w-48 sm:w-72" : "w-12"
+            )}>
+              {isSearchOpen ? (
+                <div className="relative w-full">
+                  <Input
+                    autoFocus
+                    placeholder="Find a timepiece..."
+                    className="h-12 pr-12 rounded-full border-none bg-muted/50 focus:bg-white focus:ring-accent shadow-inner text-sm"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onBlur={() => !searchQuery && setIsSearchOpen(false)}
+                  />
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-1 top-1 h-10 w-10 rounded-full hover:bg-transparent"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setIsSearchOpen(false);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="absolute right-1 top-1 h-10 w-10 rounded-full hover:bg-transparent"
-                  onClick={() => {
-                    setSearchQuery("");
-                    setIsSearchOpen(false);
-                  }}
+                  className="rounded-full h-12 w-12 hover:bg-accent/10"
+                  onClick={() => setIsSearchOpen(true)}
                 >
-                  <X className="h-4 w-4" />
+                  <Search className="h-5 w-5" />
                 </Button>
-              </div>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="rounded-full h-12 w-12 hover:bg-accent/10"
-                onClick={() => setIsSearchOpen(true)}
-              >
-                <Search className="h-5 w-5" />
-              </Button>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
           <div className="h-8 w-px bg-primary/10 hidden sm:block mx-2" />
 
@@ -228,27 +238,31 @@ export function Navbar() {
             </div>
           )}
           
-          <Link href="/favorites">
-            <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
-              <Heart className={`h-5 w-5 ${favCount > 0 ? "fill-red-500 text-red-500" : ""}`} />
-              {favCount > 0 && (
-                <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg animate-in zoom-in">
-                  {favCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          {!isDelivery && (
+            <Link href="/favorites">
+              <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
+                <Heart className={`h-5 w-5 ${favCount > 0 ? "fill-red-500 text-red-500" : ""}`} />
+                {favCount > 0 && (
+                  <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-lg animate-in zoom-in">
+                    {favCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
 
-          <Link href="/cart">
-            <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground shadow-lg animate-in zoom-in">
-                  {cartCount}
-                </span>
-              )}
-            </Button>
-          </Link>
+          {!isDelivery && (
+            <Link href="/cart">
+              <Button variant="ghost" size="icon" className="relative rounded-full h-12 w-12 hover:bg-accent/10 transition-all">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute top-2 right-2 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground shadow-lg animate-in zoom-in">
+                    {cartCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
           
           <Sheet>
             <SheetTrigger asChild>
@@ -269,74 +283,91 @@ export function Navbar() {
                 
                 <div className="flex-1 overflow-y-auto p-4">
                   <nav className="flex flex-col gap-2">
-                    <Link href="/" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
-                      <Home className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
-                      Home
-                    </Link>
+                    {isDelivery ? (
+                      <>
+                        <Link href="/about" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <Info className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          About The Studio
+                        </Link>
+                        <Link href="/delivery" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
+                          <Truck className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                          Logistics Portal
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <Link href="/" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <Home className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          Home
+                        </Link>
 
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="shopping" className="border-none">
-                        <AccordionTrigger className="hover:no-underline py-5 px-5 rounded-2xl hover:bg-accent/10 font-bold text-sm text-primary">
-                          <div className="flex items-center gap-4">
-                            <ShoppingBag className="h-5 w-5 text-accent" />
-                            Explore Collection
-                          </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="flex flex-col gap-1 pl-14 pb-4">
-                          {ShoppingOptions.map((opt) => (
-                            <Link 
-                              key={opt.name} 
-                              href={opt.href} 
-                              className="flex items-center gap-3 p-4 rounded-xl hover:bg-muted transition-all font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary"
-                            >
-                              <opt.icon className="h-4 w-4" />
-                              {opt.name}
-                            </Link>
-                          ))}
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value="shopping" className="border-none">
+                            <AccordionTrigger className="hover:no-underline py-5 px-5 rounded-2xl hover:bg-accent/10 font-bold text-sm text-primary">
+                              <div className="flex items-center gap-4">
+                                <ShoppingBag className="h-5 w-5 text-accent" />
+                                Explore Collection
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="flex flex-col gap-1 pl-14 pb-4">
+                              {ShoppingOptions.map((opt) => (
+                                <Link 
+                                  key={opt.name} 
+                                  href={opt.href} 
+                                  className="flex items-center gap-3 p-4 rounded-xl hover:bg-muted transition-all font-bold text-[10px] uppercase tracking-widest text-muted-foreground hover:text-primary"
+                                >
+                                  <opt.icon className="h-4 w-4" />
+                                  {opt.name}
+                                </Link>
+                              ))}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
 
-                    <Link href="/about" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
-                      <Info className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
-                      About The Studio
-                    </Link>
+                        <Link href="/about" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <Info className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          About The Studio
+                        </Link>
 
-                    {userName !== "Guest" && (
-                      <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
-                        <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
-                        Order History
-                      </Link>
-                    )}
+                        {userName !== "Guest" && (
+                          <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                            <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                            Order History
+                          </Link>
+                        )}
 
-                    {isAdmin && (
-                      <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
-                        <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                        Management Hub
-                      </Link>
-                    )}
+                        {isAdmin && (
+                          <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
+                            <ShoppingBag className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                            Management Hub
+                          </Link>
+                        )}
 
-                    {isDelivery && (
-                      <Link href="/delivery" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
-                        <Truck className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                        Logistics Portal
-                      </Link>
-                    )}
-
-                    {!isAdmin && userName !== "Guest" && (
-                      <button 
-                        onClick={handleLogout}
-                        className="flex items-center gap-4 p-5 rounded-2xl hover:bg-red-50 text-red-500 transition-all font-bold text-sm group w-full text-left"
-                      >
-                        <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                        Sign Out Session
-                      </button>
+                        {!isAdmin && userName !== "Guest" && (
+                          <button 
+                            onClick={handleLogout}
+                            className="flex items-center gap-4 p-5 rounded-2xl hover:bg-red-50 text-red-500 transition-all font-bold text-sm group w-full text-left"
+                          >
+                            <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                            Sign Out Session
+                          </button>
+                        )}
+                      </>
                     )}
                   </nav>
                 </div>
 
                 <div className="p-8 border-t bg-muted/20">
-                  {userName === "Guest" ? (
+                  {isDelivery ? (
+                    <Button 
+                      variant="ghost" 
+                      className="w-full justify-start gap-4 p-5 h-auto rounded-2xl text-red-500 hover:text-red-600 hover:bg-red-50 font-bold"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Sign Out
+                    </Button>
+                  ) : userName === "Guest" ? (
                     <Link href="/login">
                       <Button className="w-full h-14 rounded-2xl bg-primary text-white font-bold text-sm uppercase tracking-widest shadow-xl">
                         <LogIn className="mr-3 h-5 w-5" />

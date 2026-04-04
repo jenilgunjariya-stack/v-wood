@@ -24,6 +24,21 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
     window.print();
   };
 
+  const handleDownload = () => {
+    const originalTitle = document.title;
+    document.title = `VWood-Bill-${order.id}`;
+    toast({
+      title: "Saving Bill as PDF",
+      description: "In the print dialog, choose 'Save as PDF' to download your bill.",
+    });
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 300);
+  };
+
   if (!order) {
     return (
       <div className="min-h-screen bg-background">
@@ -66,6 +81,14 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
             <Button variant="outline" size="sm" onClick={handlePrint} className="rounded-full">
               <Printer className="mr-2 h-4 w-4" />
               Print Bill
+            </Button>
+            <Button
+              size="sm"
+              className="rounded-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold shadow-lg shadow-accent/20 gap-2"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4" />
+              Download Bill
             </Button>
           </div>
         </div>

@@ -11,7 +11,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 export default function OrdersPage() {
-  const { orders, cancelOrder } = useStore();
+  const { orders, cancelOrder, userName } = useStore();
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
 
   const toggleOrder = (orderId: string) => {
@@ -34,9 +34,14 @@ export default function OrdersPage() {
     }
   };
 
-  const sortedOrders = [...orders].reverse(); // Show newest first
+  const userOrders = orders.filter(o =>
+    o.userName === userName ||
+    (!o.userName && userName === "Guest") ||
+    o.paymentMethod === "In-Shop"
+  );
+  const sortedOrders = [...userOrders].reverse(); // Show newest first
 
-  if (orders.length === 0) {
+  if (userOrders.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -74,7 +79,7 @@ export default function OrdersPage() {
             </div>
             <div>
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Total Acquisitions</p>
-              <p className="text-2xl font-bold text-primary">{orders.length}</p>
+              <p className="text-2xl font-bold text-primary">{userOrders.length}</p>
             </div>
           </div>
         </div>
@@ -100,6 +105,14 @@ export default function OrdersPage() {
                         <Clock className="h-4 w-4 text-accent" />
                         <span className="text-xl font-bold">{order.date}</span>
                       </div>
+                      {order.paymentMethod === "In-Shop" && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-accent/20 text-accent text-[9px] font-black uppercase tracking-[0.3em] border border-accent/30">
+                            <ShoppingBag className="h-3 w-3" />
+                            In-Shop Purchase
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-xl">
                       <div className="text-right">

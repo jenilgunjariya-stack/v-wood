@@ -34,7 +34,8 @@ export default function ProfilePage() {
     setBankNameInput(userBankName);
   }, [userName, userEmail, userPhoto, userAddress, userBankName]);
 
-  const lastOrder = orders.length > 0 ? orders[0] : null;
+  const userOrders = orders.filter(o => o.userName === userName || (!o.userName && userName === "Guest"));
+  const lastOrder = userOrders.length > 0 ? userOrders[0] : null;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

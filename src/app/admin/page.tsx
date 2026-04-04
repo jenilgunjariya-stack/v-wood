@@ -61,6 +61,7 @@ export default function AdminPage() {
 
   const [mounted, setMounted] = useState(false);
   const [payrollDate, setPayrollDate] = useState<Date>(new Date());
+  const [ordersDate, setOrdersDate] = useState<Date>(new Date());
   const [todayKey, setTodayKey] = useState<string>("");
 
   useEffect(() => {
@@ -107,6 +108,12 @@ export default function AdminPage() {
     const newDate = new Date(payrollDate);
     newDate.setMonth(newDate.getMonth() + offset);
     setPayrollDate(newDate);
+  };
+
+  const changeOrdersMonth = (offset: number) => {
+    const newDate = new Date(ordersDate);
+    newDate.setMonth(newDate.getMonth() + offset);
+    setOrdersDate(newDate);
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -571,7 +578,7 @@ export default function AdminPage() {
                                 <SelectContent className="rounded-2xl border-none shadow-2xl">
                                   {products.map(p => (
                                     <SelectItem key={p.id} value={p.id} className="h-12 rounded-xl">
-                                      {p.name} - ₹{p.price.toLocaleString('en-IN')}
+                                      {p.name} - Rs. {p.price.toLocaleString('en-IN')}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -596,7 +603,7 @@ export default function AdminPage() {
                                         </div>
                                         <div>
                                           <p className="text-sm font-bold text-primary">{item.name}</p>
-                                          <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">₹{item.price.toLocaleString('en-IN')} / unit</p>
+                                          <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">Rs. {item.price.toLocaleString('en-IN')} / unit</p>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-6">
@@ -640,7 +647,7 @@ export default function AdminPage() {
                            <div className="space-y-4 relative z-10">
                               <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
                                  <span>Subtotal Assessment</span>
-                                 <span>₹{offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}</span>
+                                 <span>Rs. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}</span>
                               </div>
                               <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
                                  <span>Artisanal Tax / Handling</span>
@@ -650,7 +657,7 @@ export default function AdminPage() {
                                  <div>
                                    <p className="text-[10px] font-black text-accent uppercase tracking-[0.3em] mb-2 leading-none text-glow">Final Bill Amount</p>
                                    <p className="text-5xl font-headline font-bold tracking-tighter leading-none">
-                                     ₹{offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}
+                                     Rs. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}
                                    </p>
                                  </div>
                                  <div className="text-right">
@@ -751,7 +758,7 @@ export default function AdminPage() {
                         </div>
                         <div className="grid grid-cols-3 gap-6">
                           <div className="space-y-2">
-                            <Label>Price (₹)</Label>
+                            <Label>Price (Rs.)</Label>
                             <Input type="number" value={newClock.price} onChange={e => setNewClock({ ...newClock, price: parseInt(e.target.value) })} className="h-12" />
                           </div>
                           <div className="space-y-2">
@@ -855,7 +862,7 @@ export default function AdminPage() {
                             {p.category || "General"}
                           </Badge>
                         </td>
-                        <td className="px-8 py-6 font-bold text-primary text-lg">₹{p.price.toLocaleString('en-IN')}</td>
+                        <td className="px-8 py-6 font-bold text-primary text-lg">Rs. {p.price.toLocaleString('en-IN')}</td>
                         <td className="px-8 py-6 text-center">
                           <Badge
                             variant={p.stock > 0 ? "outline" : "destructive"}
@@ -1006,9 +1013,38 @@ export default function AdminPage() {
 
           {activeTab === 'ratings' && (
             <div className="animate-in fade-in duration-500">
-              <div className="mb-16">
+              <div className="mb-10">
                 <h1 className="text-5xl font-headline font-bold text-primary">Customer Feedback</h1>
                 <p className="text-muted-foreground mt-2 text-lg">Oversee all ratings and reviews submitted by artisanal collectors.</p>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
+                <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                  <CardContent className="pt-10 p-8">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-3">Total Reviews</p>
+                    <p className="text-5xl font-bold text-primary">{ratings.length}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-primary text-primary-foreground border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                  <CardContent className="pt-10 p-8">
+                    <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3">Unique Raters</p>
+                    <p className="text-5xl font-bold">{new Set(ratings.map(r => r.userName)).size}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-white border-none shadow-xl rounded-[2.5rem] overflow-hidden">
+                  <CardContent className="pt-10 p-8">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-3">Average Rating</p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-5xl font-bold text-primary">
+                        {ratings.length > 0
+                          ? (ratings.reduce((s, r) => s + r.rating, 0) / ratings.length).toFixed(1)
+                          : "—"}
+                      </p>
+                      {ratings.length > 0 && <Star className="h-8 w-8 fill-accent text-accent" />}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
 
               <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
@@ -1017,7 +1053,7 @@ export default function AdminPage() {
                     <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       <th className="px-8 py-6">Customer</th>
                       <th className="px-8 py-6">Product</th>
-                      <th className="px-8 py-6">Rating</th>
+                      <th className="px-8 py-6">Rating Given</th>
                       <th className="px-8 py-6">Date</th>
                       <th className="px-8 py-6 text-right">Status</th>
                     </tr>
@@ -1055,10 +1091,14 @@ export default function AdminPage() {
                               </div>
                             </td>
                             <td className="px-8 py-6">
-                              <div className="flex items-center gap-0.5">
-                                {[1, 2, 3, 4, 5].map((s) => (
-                                  <Star key={s} className={cn("h-4 w-4", s <= rating.rating ? "fill-accent text-accent" : "text-muted-foreground/20")} />
-                                ))}
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl font-black text-accent">{rating.rating}</span>
+                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">/ 5</span>
+                                <div className="flex items-center gap-0.5 ml-1">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star key={s} className={cn("h-3.5 w-3.5", s <= rating.rating ? "fill-accent text-accent" : "text-muted-foreground/20")} />
+                                  ))}
+                                </div>
                               </div>
                             </td>
                             <td className="px-8 py-6">
@@ -1154,7 +1194,7 @@ export default function AdminPage() {
                               <Input value={newEmp.name} onChange={e => setNewEmp({ ...newEmp, name: e.target.value })} placeholder="Master Craftsman Name" className="h-12" />
                             </div>
                             <div className="space-y-2">
-                              <Label>Monthly Salary (₹)</Label>
+                              <Label>Monthly Salary (Rs.)</Label>
                               <Input type="number" value={newEmp.salary} onChange={e => setNewEmp({ ...newEmp, salary: parseInt(e.target.value) })} className="h-12" />
                             </div>
                             <div className="space-y-2">
@@ -1216,7 +1256,7 @@ export default function AdminPage() {
                             <td className="px-8 py-6">
                               <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{emp.role}</span>
                             </td>
-                            <td className="px-8 py-6 font-bold text-primary text-lg">₹{emp.salary.toLocaleString('en-IN')}</td>
+                            <td className="px-8 py-6 font-bold text-primary text-lg">Rs. {emp.salary.toLocaleString('en-IN')}</td>
                             <td className="px-8 py-6">
                               <div className="flex flex-col">
                                 <button
@@ -1433,7 +1473,7 @@ export default function AdminPage() {
                         <Input value={editingEmp.name} onChange={e => setEditingEmp({ ...editingEmp, name: e.target.value })} className="h-12" />
                       </div>
                       <div className="space-y-2">
-                        <Label>Monthly Salary (₹)</Label>
+                        <Label>Monthly Salary (Rs.)</Label>
                         <Input type="number" value={editingEmp.salary} onChange={e => setEditingEmp({ ...editingEmp, salary: parseInt(e.target.value) })} className="h-12" />
                       </div>
                       <div className="space-y-2">
@@ -1450,23 +1490,48 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === 'orders' && (
+          {activeTab === 'orders' && (() => {
+            const currentOrders = orders.filter(o => {
+              const dStr = (o.date || "").replace(' at ', ' ');
+              const d = new Date(dStr);
+              if (isNaN(d.getTime())) return true;
+              return d.getMonth() === ordersDate.getMonth() && d.getFullYear() === ordersDate.getFullYear();
+            });
+
+            return (
             <div className="animate-in fade-in duration-500">
               <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16">
-                <h1 className="text-5xl font-headline font-bold text-primary">Acquisition History</h1>
-                {orders.some(o => o.status === 'Cancelled') && (
-                  <div className="flex items-center gap-4 px-8 py-4 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] animate-in slide-in-from-right duration-500">
-                    <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
-                      <AlertTriangle className="h-5 w-5 text-red-600" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black text-red-700 uppercase tracking-[0.2em] mb-1">Customer Retraction</p>
-                      <p className="text-xs font-bold text-red-900 uppercase tracking-widest leading-none">
-                        {orders.filter(o => o.status === 'Cancelled').length} Order(s) Marked as Cancelled
-                      </p>
-                    </div>
+                <div className="space-y-1">
+                  <h1 className="text-5xl font-headline font-bold text-primary">Acquisition History</h1>
+                  <p className="text-muted-foreground text-lg">Filter and view monthly orders.</p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(-1)}>
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 font-bold px-5 py-2 flex items-center gap-3 text-xs uppercase tracking-[0.2em] rounded-full">
+                      <Calendar className="h-4 w-4" />
+                      {formatMonthYear(ordersDate)}
+                    </Badge>
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(1)}>
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
-                )}
+                  {currentOrders.some(o => o.status === 'Cancelled') && (
+                    <div className="flex items-center gap-4 px-8 py-4 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] animate-in slide-in-from-right duration-500">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
+                        <AlertTriangle className="h-5 w-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black text-red-700 uppercase tracking-[0.2em] mb-1">Customer Retraction</p>
+                        <p className="text-xs font-bold text-red-900 uppercase tracking-widest leading-none">
+                          {currentOrders.filter(o => o.status === 'Cancelled').length} Order(s) Marked as Cancelled
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
                 <table className="w-full text-left">
@@ -1481,66 +1546,135 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {orders.map((order) => (
-                      <tr key={order.id} className={cn(
-                        "hover:bg-muted/10 transition-colors",
-                        order.status === 'Cancelled' && "bg-red-50/40 opacity-80"
-                      )}>
-                        <td className="px-8 py-6 font-bold text-primary text-lg">
-                           <div className="flex flex-col gap-1">
-                             {order.id}
-                             {order.paymentMethod === 'In-Shop' && (
-                               <Badge className="w-fit bg-accent/20 text-accent border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
-                                 Physical Studio
-                               </Badge>
-                             )}
-                           </div>
-                        </td>
-                        <td className="px-8 py-6 text-sm font-bold uppercase tracking-widest text-muted-foreground">
-                            <div className="flex flex-col gap-1">
-                              {order.customerName}
-                              <span className="text-[10px] text-accent lowercase font-mono">{order.customerPhone}</span>
-                            </div>
-                        </td>
-                        <td className="px-8 py-6 font-bold text-accent text-lg">₹{order.total.toLocaleString('en-IN')}</td>
-                        <td className="px-8 py-6">
-                          <p className="text-sm font-bold text-primary">
-                            {new Date(new Date(order.date).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
-                              day: 'numeric', month: 'short', year: 'numeric'
-                            })}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Est. Completion</p>
-                        </td>
-                        <td className="px-8 py-6">
-                          <Select
-                            value={order.status}
-                            onValueChange={(val) => updateOrderStatus(order.id, val as Order['status'])}
-                          >
-                            <SelectTrigger className="h-10 w-[180px] text-xs font-bold uppercase tracking-widest rounded-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Awaiting Verification">Awaiting Payment Verification</SelectItem>
-                              <SelectItem value="Processing">Acquisition Accepted</SelectItem>
-                              <SelectItem value="Shipped">In Transit</SelectItem>
-                              <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
-                              <SelectItem value="Delivered">Delivered & Verified</SelectItem>
-                              <SelectItem value="Cancelled">Cancelled by Customer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </td>
-                        <td className="px-8 py-6 text-right">
-                          <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-full border-accent text-accent font-bold hover:bg-accent hover:text-white transition-all">
-                            <Link href={`/order/${order.id}/bill`}>Digital Bill</Link>
-                          </Button>
+                    {currentOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-8 py-20 text-center text-muted-foreground italic font-bold">
+                          No orders found for {formatMonthYear(ordersDate)}.
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      currentOrders.map((order) => (
+                        <tr key={order.id} className={cn(
+                          "hover:bg-muted/10 transition-colors",
+                          order.status === 'Cancelled' && "bg-red-50/40 opacity-80"
+                        )}>
+                          <td className="px-8 py-6 font-bold text-primary text-lg">
+                             <div className="flex flex-col gap-1">
+                               {order.id}
+                               {order.paymentMethod === 'In-Shop' && (
+                                 <Badge className="w-fit bg-accent/20 text-accent border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                                   Physical Studio
+                                 </Badge>
+                               )}
+                             </div>
+                          </td>
+                          <td className="px-8 py-6 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                              <div className="flex flex-col gap-1">
+                                {order.customerName}
+                                <span className="text-[10px] text-accent lowercase font-mono">{order.customerPhone}</span>
+                              </div>
+                          </td>
+                          <td className="px-8 py-6 font-bold text-accent text-lg">Rs. {order.total.toLocaleString('en-IN')}</td>
+                          <td className="px-8 py-6">
+                            <p className="text-sm font-bold text-primary">
+                              {new Date(new Date((order.date || "").replace(' at ', ' ')).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', year: 'numeric'
+                              })}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Est. Completion</p>
+                          </td>
+                          <td className="px-8 py-6">
+                            <Select
+                              value={order.status}
+                              onValueChange={(val) => updateOrderStatus(order.id, val as Order['status'])}
+                            >
+                              <SelectTrigger className="h-10 w-[180px] text-xs font-bold uppercase tracking-widest rounded-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Confirmed">Order Confirmed</SelectItem>
+                                <SelectItem value="Awaiting Verification">Awaiting Payment Verification</SelectItem>
+                                <SelectItem value="Processing">Acquisition Accepted</SelectItem>
+                                <SelectItem value="Shipped">In Transit</SelectItem>
+                                <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
+                                <SelectItem value="Delivered">Delivered & Verified</SelectItem>
+                                <SelectItem value="Cancelled">Cancelled by Customer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </td>
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-3">
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-10 px-6 rounded-full font-bold bg-muted/50 hover:bg-muted">
+                                    Details
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                  <DialogHeader>
+                                    <DialogTitle className="font-headline text-3xl">Order Information</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="space-y-6 pt-4 text-left">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/10 p-6 rounded-[2rem] border border-primary/5">
+                                      <div>
+                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Customer Name</p>
+                                        <p className="font-bold text-lg text-primary">{order.customerName}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Order Date</p>
+                                        <p className="font-bold text-lg text-primary">{order.date}</p>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Payment Method</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <Badge className="bg-accent/10 border-none text-accent font-black uppercase tracking-widest px-3 py-1">
+                                            {order.paymentMethod || 'Not Specified'}
+                                          </Badge>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Mobile Number</p>
+                                        <p className="font-bold text-lg text-primary">{order.customerPhone || 'Not Specified'}</p>
+                                      </div>
+                                      <div className="col-span-1 md:col-span-2">
+                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Address</p>
+                                        <p className="font-bold text-lg text-primary">{order.customerAddress}</p>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-muted-foreground uppercase tracking-[0.2em] text-[10px] mb-4">Products Acquired</p>
+                                      <div className="space-y-4">
+                                        {order.items.map((item, idx) => (
+                                          <div key={idx} className="flex items-center gap-5 bg-white p-4 rounded-2xl border shadow-sm">
+                                            <div className="h-16 w-16 rounded-xl bg-muted overflow-hidden shrink-0 border p-1">
+                                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                                            </div>
+                                            <div className="flex-1">
+                                              <p className="font-bold text-primary">{item.name}</p>
+                                              <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Quantity: {item.quantity}</p>
+                                            </div>
+                                            <p className="font-bold text-accent text-lg">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                              <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-full border-accent text-accent font-bold hover:bg-accent hover:text-white transition-all">
+                                <Link href={`/order/${order.id}/bill`}>Digital Bill</Link>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>
             </div>
-          )}
+            );
+          })()}
 
 
           {activeTab === 'settings' && (

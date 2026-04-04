@@ -3,7 +3,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Navbar } from "@/components/layout/Navbar";
 import { useStore } from "@/app/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,8 +71,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
       </div>
 
-      <Navbar />
-      
+
       <main className="flex-1 flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="flex flex-col items-center mb-10">

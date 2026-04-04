@@ -12,11 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function ClockCard({ clock }: { clock: Clock }) {
-  const { addToCart, toggleFavorite, isFavorite, addRating, getAverageRating, getProductRatings, userName, userPhoto } = useStore();
+  const { addToCart, toggleFavorite, isFavorite, addRating, getAverageRating, getProductRatings, getUserRating, userName, userPhoto } = useStore();
   const [hoverRating, setHoverRating] = useState(0);
   const avgRating = getAverageRating(clock.id);
   const totalRatings = getProductRatings(clock.id).length;
   const isFav = isFavorite(clock.id);
+  // Previously submitted rating by the current user (if any)
+  const userExistingRating = getUserRating(clock.id);
   const isOutOfStock = clock.stock <= 0;
   
   // High-end discount detection
@@ -100,37 +102,48 @@ export function ClockCard({ clock }: { clock: Clock }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-1 mb-4 group/stars" onClick={(e) => e.preventDefault()}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                onMouseEnter={() => setHoverRating(star)}
-                onMouseLeave={() => setHoverRating(0)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  addRating({
-                    productId: clock.id,
-                    userName: userName,
-                    userPhoto: userPhoto,
-                    rating: star
-                  });
-                  toast({
-                    title: "Rating Submitted",
-                    description: `You rated ${clock.name} ${star} stars.`,
-                  });
-                }}
-                className="transition-transform active:scale-90"
-              >
-                <Star 
-                  className={cn(
-                    "h-4 w-4 transition-colors",
-                    (hoverRating || avgRating) >= star ? "fill-accent text-accent" : "text-muted-foreground/30"
-                  )} 
-                />
-              </button>
-            ))}
-            <span className="text-[10px] text-muted-foreground ml-2">({totalRatings})</span>
+          <div className="flex flex-col gap-1 mb-4" onClick={(e) => e.preventDefault()}>
+            {userExistingRating && (
+              <span className="text-[9px] font-bold text-accent uppercase tracking-widest">
+                Your Rating: {userExistingRating.rating} ★ — click to update
+              </span>
+            )}
+            <div className="flex items-center gap-1 group/stars">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isUpdate = !!userExistingRating;
+                    addRating({
+                      productId: clock.id,
+                      userName: userName,
+                      userPhoto: userPhoto,
+                      rating: star
+                    });
+                    toast({
+                      title: isUpdate ? "Rating Updated" : "Rating Submitted",
+                      description: `You rated ${clock.name} ${star} star${star > 1 ? 's' : ''}.`,
+                    });
+                  }}
+                  className="transition-transform active:scale-90"
+                >
+                  <Star
+                    className={cn(
+                      "h-4 w-4 transition-colors",
+                      (hoverRating
+                        ? hoverRating >= star
+                        : (userExistingRating ? userExistingRating.rating >= star : avgRating >= star)
+                      ) ? "fill-accent text-accent" : "text-muted-foreground/30"
+                    )}
+                  />
+                </button>
+              ))}
+              <span className="text-[10px] text-muted-foreground ml-2">({totalRatings})</span>
+            </div>
           </div>
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[48px] mb-4">
             {clock.description}

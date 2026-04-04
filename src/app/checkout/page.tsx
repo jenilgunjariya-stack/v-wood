@@ -25,7 +25,7 @@ const UPI_APPS = [
 ];
 
 export default function CheckoutPage() {
-  const { cart, clearCart, addOrder, storeSettings, userBankName } = useStore();
+  const { cart, clearCart, addOrder, storeSettings, userBankName, userName } = useStore();
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'requesting' | 'request_processing' | 'awaiting_bank' | 'verifying' | 'admin_verification' | 'success'>('idle');
@@ -219,7 +219,8 @@ export default function CheckoutPage() {
       customerName: `${formData.firstName} ${formData.lastName}`,
       customerAddress: `${formData.address}, ${formData.city}, ${formData.zip}`,
       customerPhone: formData.phone,
-      paymentMethod: paymentMethod
+      paymentMethod: paymentMethod,
+      userName: userName
     };
     
     addOrder(newOrder);

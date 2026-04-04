@@ -377,7 +377,7 @@ export default function Home() {
                 V-WOOD QUARTZ is dedicated to the philosophy of timelessness. We create functional art that honors the legacy of craftsmanship.
               </p>
               <div className="flex items-center gap-6">
-                <a href="#" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
+                <a href="https://www.instagram.com/vwoodquartz?igsh=a3hrdDcyaGxtZjVr" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
                   <Instagram className="h-5 w-5" />
                 </a>
                 <a href="#" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">

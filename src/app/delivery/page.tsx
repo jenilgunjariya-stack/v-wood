@@ -5,7 +5,7 @@ import { useStore } from "@/app/lib/store";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Truck, MapPin, Package, User, LogOut, Smartphone, Map as MapIcon, CheckCircle2, History, ListTodo, Navigation2, Search } from "lucide-react";
+import { Truck, MapPin, Package, User, LogOut, Smartphone, Map as MapIcon, CheckCircle2, History, ListTodo, Navigation2, Search, CreditCard, Banknote, Wallet } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
@@ -55,11 +55,12 @@ export default function DeliveryPage() {
   };
 
   const allDeliveryOrders = orders.filter(o => o.status !== 'Cancelled' && o.paymentMethod !== 'In-Shop');
-  const filteredOrders = allDeliveryOrders.filter(o => 
-    o.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.customerAddress.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = allDeliveryOrders.filter(o => {
+    const idMatch = o.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const nameMatch = o.customerName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const addressMatch = o.customerAddress?.toLowerCase().includes(searchQuery.toLowerCase());
+    return idMatch || nameMatch || addressMatch;
+  });
 
   const activeOrders = filteredOrders.filter(o => o.status !== 'Delivered');
   const completedOrders = filteredOrders.filter(o => o.status === 'Delivered');
@@ -190,6 +191,8 @@ function DeliveryCard({ order, onUpdate, isCompleted = false }: { order: Order, 
                    <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-none shadow-2xl">
+                   <SelectItem value="Confirmed" className="h-14 rounded-xl text-xs font-bold uppercase tracking-widest">Order Confirmed</SelectItem>
+                   <SelectItem value="Awaiting Verification" className="h-14 rounded-xl text-xs font-bold uppercase tracking-widest">Pending Verification</SelectItem>
                    <SelectItem value="Processing" className="h-14 rounded-xl text-xs font-bold uppercase tracking-widest">In Warehouse</SelectItem>
                    <SelectItem value="Shipped" className="h-14 rounded-xl text-xs font-bold uppercase tracking-widest">In Transit</SelectItem>
                    <SelectItem value="Out for Delivery" className="h-14 rounded-xl text-xs font-bold uppercase tracking-widest">Out for Delivery</SelectItem>
@@ -198,14 +201,45 @@ function DeliveryCard({ order, onUpdate, isCompleted = false }: { order: Order, 
               </Select>
            </div>
 
-           <div className="grid grid-cols-2 gap-4">
-              <div className="p-5 bg-white rounded-[2rem] border border-primary/5 space-y-1">
-                 <p className="text-[9px] font-bold text-muted-foreground uppercase">Inventory</p>
-                 <p className="text-lg font-bold text-primary">{order.items.reduce((acc, i) => acc + i.quantity, 0)} Pcs</p>
+           <div className="space-y-4 pt-4">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em]">Transaction Details</p>
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-5 bg-white rounded-[2rem] border border-primary/5 space-y-1">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Inventory</p>
+                    <p className="text-lg font-bold text-primary">{order.items.reduce((acc, i) => acc + i.quantity, 0)} Pcs</p>
+                 </div>
+                 <div className="p-5 bg-white rounded-[2rem] border border-primary/5 space-y-1">
+                    <p className="text-[9px] font-bold text-accent uppercase">Value</p>
+                    <p className="text-lg font-bold text-primary tracking-tighter">Rs. {order.total.toLocaleString('en-IN')}/-</p>
+                 </div>
               </div>
-              <div className="p-5 bg-white rounded-[2rem] border border-primary/5 space-y-1">
-                 <p className="text-[9px] font-bold text-accent uppercase">Value</p>
-                 <p className="text-lg font-bold text-primary tracking-tighter">Rs. {order.total.toLocaleString('en-IN')}/-</p>
+              <div className={cn(
+                "p-5 rounded-[2rem] border transition-all flex items-center justify-between",
+                order.paymentMethod === 'COD' 
+                  ? "bg-green-50 border-green-200 shadow-[0_10px_30px_-5px_rgba(34,197,94,0.15)]" 
+                  : "bg-white border-primary/5"
+              )}>
+                 <div className="space-y-1">
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase">Payment Mode</p>
+                    <div className="flex items-center gap-2">
+                       {order.paymentMethod === 'COD' && <Banknote className="h-4 w-4 text-green-600" />}
+                       {order.paymentMethod === 'UPI' && <Smartphone className="h-4 w-4 text-blue-600" />}
+                       {order.paymentMethod === 'Card' && <CreditCard className="h-4 w-4 text-purple-600" />}
+                       <p className={cn(
+                         "text-sm font-bold",
+                         order.paymentMethod === 'COD' ? "text-green-700" : "text-primary"
+                       )}>
+                         {order.paymentMethod === 'COD' ? 'Cash on Delivery' : 
+                          order.paymentMethod === 'UPI' ? 'UPI Payment' : 
+                          order.paymentMethod === 'Card' ? 'Card Payment' : order.paymentMethod}
+                       </p>
+                    </div>
+                 </div>
+                 {order.paymentMethod === 'COD' && (
+                   <div className="px-3 py-1 bg-green-200 text-green-800 text-[8px] font-black uppercase tracking-widest rounded-full">
+                     Collect Cash
+                   </div>
+                 )}
               </div>
            </div>
         </div>
@@ -220,13 +254,16 @@ function DeliveryCard({ order, onUpdate, isCompleted = false }: { order: Order, 
                  <div>
                     <h4 className="text-2xl font-bold text-primary mb-1">{order.customerName}</h4>
                     <div className="flex items-center gap-2 text-muted-foreground text-xs font-bold">
-                       <Smartphone className="h-3 w-3 text-accent" /> {order.customerPhone}
+                       <Smartphone className="h-3 w-3 text-accent" /> 
+                       <a href={`tel:${order.customerPhone || ''}`} className="hover:text-primary transition-colors underline decoration-dotted underline-offset-2">
+                         {order.customerPhone || 'N/A'}
+                       </a>
                     </div>
                  </div>
               </div>
 
               <div className="flex -space-x-4">
-                 {order.items.map((item, idx) => (
+                 {order.items?.slice(0, 3).map((item, idx) => (
                    <div key={idx} className="h-16 w-16 rounded-2xl border-4 border-white shadow-lg overflow-hidden group/thumb transition-transform hover:z-10 hover:scale-110">
                       <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover grayscale transition-all group-hover/thumb:grayscale-0" />
                    </div>
@@ -257,10 +294,12 @@ function DeliveryCard({ order, onUpdate, isCompleted = false }: { order: Order, 
                     </Button>
                     <Button 
                       variant="outline"
-                      onClick={() => window.location.href = `tel:${order.customerPhone}`}
-                      className="h-16 px-10 rounded-[1.5rem] border-2 border-primary/10 text-primary font-bold text-sm uppercase tracking-widest gap-3 bg-white hover:bg-primary hover:text-white transition-all shadow-xl"
+                      asChild
+                      className="h-16 px-10 rounded-[1.5rem] border-2 border-primary/10 text-primary font-bold text-sm uppercase tracking-widest gap-3 bg-white hover:bg-primary hover:text-white transition-all shadow-xl inline-flex items-center justify-center cursor-pointer"
                     >
-                       <Smartphone className="h-5 w-5" /> Collector Direct
+                      <a href={`tel:${(order.customerPhone || '').replace(/\D/g,'')}`}>
+                        <Smartphone className="h-5 w-5" /> Collector Direct
+                      </a>
                     </Button>
                  </div>
               </div>

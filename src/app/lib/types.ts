@@ -39,6 +39,7 @@ export interface Order {
   customerAddress: string;
   customerPhone: string;
   paymentMethod: 'Card' | 'UPI' | 'COD' | 'In-Shop';
+  userName?: string;
 }
 
 export interface LogisticsLog {
