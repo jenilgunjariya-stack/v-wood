@@ -12,6 +12,7 @@ import { CheckCircle, Truck, CreditCard, ShieldCheck, Wallet, Banknote, Smartpho
 import Link from "next/link";
 import Image from "next/image";
 import { Order } from "@/app/lib/types";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,9 @@ export default function CheckoutPage() {
     otp: ""
   });
   const [otpMode, setOtpMode] = useState(false);
+  const [gatewayMode, setGatewayMode] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [timer, setTimer] = useState(180); // 3 minutes
 
   useEffect(() => {
@@ -143,44 +147,42 @@ export default function CheckoutPage() {
     const activeApp = overrideUpiApp || upiApp;
 
     if (paymentMethod === 'UPI') {
-      const intentUrl = getDynamicUpiUrl(activeApp || 'any');
+      if (!isUpiValid(formData.upiId)) return;
+      
+      setPaymentStatus('requesting'); // "Sending Payment Request..."
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      if (formData.upiId === 'fail@upi') {
+        setPaymentError("UPI Request Failed: The payment request was declined by your bank. Please use a different UPI ID or payment method.");
+        setPaymentStatus('idle');
+        setIsProcessing(false);
+        return;
+      }
       
       if (isMobile) {
-        // Same Device Flow - Flipkart-style Auto-Open
-        setPaymentStatus('requesting'); // "Opening UPI App..."
-        window.location.href = intentUrl;
-        
-        // Wait for user to come back or simulated delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setPaymentStatus('verifying'); // "Processing In-App Payment..."
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setPaymentStatus('admin_verification'); // "Finalizing with UPI Network..."
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        window.location.href = getDynamicUpiUrl(activeApp || 'any');
+        setPaymentStatus('verifying'); 
+        await new Promise(r => setTimeout(r, 4000));
+        setPaymentStatus('admin_verification');
+        await new Promise(r => setTimeout(r, 2000));
         finalizeOrder();
-       } else {
-        // Desktop / Another Device Flow - Flipkart-style Collect Request
-        setPaymentStatus('awaiting_bank'); // "Sending Collect Request to App..."
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // At this point, we show the "Waiting for Payment" screen (via paymentStatus === 'awaiting_bank')
-        // The simulation pauses here until the user clicks "I have successfully paid"
+      } else {
+        setPaymentStatus('awaiting_bank'); // "Open UPI App & Approve"
+        setTimer(180);
         setIsProcessing(false); 
       }
     } else if (paymentMethod === 'Card') {
-      // 1. Handshake with Bank
-      setPaymentStatus('requesting'); // "Initializing Secure Handshake..."
+      if (!isPaymentValid()) return;
+      setIsRedirecting(true);
+      setPaymentStatus('requesting'); 
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setIsRedirecting(false);
+      setGatewayMode(true);
+      setPaymentStatus('awaiting_bank'); 
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // 2. Trigger OTP Requirement
-      setPaymentStatus('awaiting_bank'); // "Requesting OTP from Bank..."
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // 3. Enter OTP Phase (This is handled by a separate state to show the OTP UI)
       setOtpMode(true);
-      // Logic pauses here while OtpMode is true. 
-      // handleOtpSubmit will continue the process.
+      setIsProcessing(false);
     } else if (paymentMethod === 'COD') {
-      // Instant Confirmation for Cash on Delivery
       finalizeOrder();
     }
   };
@@ -188,12 +190,22 @@ export default function CheckoutPage() {
   const handleOtpSubmit = async (otp: string) => {
     if (otp.length < 6) return;
     
-    setOtpMode(false);
     setIsProcessing(true);
+    setOtpMode(false);
+    setPaymentError(null);
     
     // 4. Verification of OTP
     setPaymentStatus('verifying'); // "Authenticating 3D Secure..."
     await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Simulated Failure Logic for Testing
+    if (otp === '000000') {
+      setPaymentError("Authentication Failed: The authorization code entered is incorrect or expired. Please try again.");
+      setGatewayMode(false);
+      setIsProcessing(false);
+      setPaymentStatus('idle');
+      return;
+    }
     
     // 5. Deduction from User Account
     setPaymentStatus('request_processing'); // "Capturing Funds from Account..."
@@ -206,8 +218,10 @@ export default function CheckoutPage() {
     finalizeOrder();
   };
 
-  const finalizeOrder = () => {
+  function finalizeOrder() {
     const currentOrderId = `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+    const transactionId = `TXN-${Math.random().toString(36).substr(2, 12).toUpperCase()}`;
+    
     const newOrder: Order = {
       id: currentOrderId,
       date: new Date().toLocaleDateString('en-IN', {
@@ -219,8 +233,13 @@ export default function CheckoutPage() {
       customerName: `${formData.firstName} ${formData.lastName}`,
       customerAddress: `${formData.address}, ${formData.city}, ${formData.zip}`,
       customerPhone: formData.phone,
+      customerEmail: formData.email,
       paymentMethod: paymentMethod,
-      userName: userName
+      userName: userName,
+      transactionId: transactionId,
+      upiId: paymentMethod === 'UPI' ? formData.upiId : undefined,
+      cardLast4: paymentMethod === 'Card' ? formData.cardNumber.replace(/\s/g, '').slice(-4) : undefined,
+      cardHolderName: paymentMethod === 'Card' ? formData.cardName : undefined
     };
     
     addOrder(newOrder);
@@ -230,12 +249,12 @@ export default function CheckoutPage() {
     clearCart();
     
     toast({
-      title: "Order Placed Successfully",
+      title: "Payment Successful & Settled",
       description: paymentMethod === 'COD' 
         ? "Your order has been confirmed. Please keep cash ready for delivery."
-        : "Payment confirmed. Your V-WOOD artisanal piece is being prepared.",
+        : `Transaction ${transactionId} processed. Funds settled with V-WOOD Admin account.`,
     });
-  };
+  }
 
   if (!mounted) return null;
 
@@ -250,107 +269,74 @@ export default function CheckoutPage() {
         <Navbar />
         <main className="flex-1 flex items-center justify-center p-8">
           <div className="max-w-2xl w-full space-y-8 animate-in fade-in zoom-in duration-700">
-            <Card className="border-none shadow-[0_30px_100px_rgba(0,0,0,0.15)] rounded-[3rem] overflow-hidden bg-white">
-              <CardHeader className="bg-primary text-primary-foreground p-10 text-center relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-accent/30" />
-                <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-accent/20 text-accent mb-6 shadow-xl border border-white/10">
-                  <CheckCircle className="h-10 w-10" />
-                </div>
-                <CardTitle className="text-4xl font-headline font-bold">Digital Receipt</CardTitle>
-                <p className="text-primary-foreground/60 text-xs uppercase tracking-[0.4em] mt-3">V-WOOD QUARTZ MORBI</p>
-              </CardHeader>
-              
-              <CardContent className="p-12 space-y-10">
-                <div className="grid grid-cols-2 gap-8 text-[12px]">
-                  <div className="space-y-1">
-                    <p className="font-bold text-muted-foreground uppercase tracking-widest">Order ID</p>
-                    <p className="text-lg font-bold text-primary">#{orderId}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <p className="font-bold text-muted-foreground uppercase tracking-widest">Transaction Date</p>
-                    <p className="text-lg font-bold text-primary">{orderDate}</p>
-                  </div>
-                </div>
+             <div className="text-center space-y-6">
+               <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-green-500/30">
+                 <CheckCircle className="h-12 w-12 text-white" />
+               </div>
+               <div className="space-y-2">
+                 <h1 className="text-5xl font-headline font-bold text-primary">Transaction Secured</h1>
+                 <p className="text-muted-foreground text-lg">Your artisanal acquisition has been verified and settled.</p>
+               </div>
+             </div>
 
-                <div className="space-y-4 pt-6 border-t border-dashed">
-                  <p className="text-sm font-bold text-primary uppercase tracking-widest">Items Purchased</p>
-                  <div className="space-y-4">
-                    {cart.map((item) => (
-                      <div key={item.id} className="flex justify-between items-center text-sm">
-                        <div className="flex gap-4 items-center">
-                          <div className="w-12 h-12 bg-muted rounded-xl flex items-center justify-center border font-bold text-primary">
-                            {item.quantity}x
+             <Card className="bg-white border-none shadow-2xl rounded-[3rem] overflow-hidden">
+               <div className="bg-primary p-8 text-primary-foreground flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-60">Order ID</p>
+                    <p className="text-xl font-bold font-mono">#{orderId}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-60">Status</p>
+                    <Badge className="bg-accent text-accent-foreground border-none font-black uppercase tracking-widest px-4">PAYMENT SETTLED</Badge>
+                  </div>
+               </div>
+               
+               <CardContent className="p-10 space-y-10">
+                 <div className="grid grid-cols-2 gap-10">
+                    <div className="space-y-4">
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Beneficiary Details (Admin)</p>
+                       <div className="p-5 bg-muted/20 rounded-2xl border-2 border-dashed">
+                          <p className="text-sm font-bold text-primary">{storeSettings.ownerName}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">{storeSettings.bankName}</p>
+                          <p className="text-xs font-mono text-accent mt-2">A/C: •••• {storeSettings.accountNumber?.slice(-4) || '8352'}</p>
+                       </div>
+                    </div>
+                    <div className="space-y-4">
+                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Acquisition Timestamp</p>
+                       <div className="space-y-2">
+                          <p className="text-sm font-bold">{orderDate}</p>
+                          <div className="flex items-center gap-2 text-green-600">
+                             <ShieldCheck className="h-4 w-4" />
+                             <span className="text-[10px] font-black uppercase tracking-tighter text-green-700">V-WOOD GATEWAY PROTECTED</span>
                           </div>
-                          <span className="font-bold text-primary">{item.name}</span>
-                        </div>
-                        <span className="font-medium">₹{(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="space-y-4 pt-8 border-t border-dashed">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center">Settlement Invoice Summary</p>
+                    {cart.map(item => (
+                      <div key={item.id} className="flex justify-between items-center bg-muted/5 p-4 rounded-xl border">
+                        <span className="font-bold text-sm">{item.name} <span className="text-muted-foreground text-xs ml-2">x{item.quantity}</span></span>
+                        <span className="font-bold text-primary">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}</span>
                       </div>
                     ))}
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-6 border-t border-dashed">
-                  <div className="flex justify-between items-center text-2xl font-bold text-primary">
-                    <span className="font-headline tracking-tighter">Net Total</span>
-                    <span className="text-accent">₹{total.toLocaleString('en-IN')}</span>
-                  </div>
-                  {paymentMethod === 'COD' || paymentMethod === 'UPI' ? (
-                    <div className="p-4 bg-accent/5 rounded-2xl border border-accent/20 flex items-center gap-3">
-                      <ShieldCheck className="h-5 w-5 text-accent" />
-                      <p className="text-[10px] font-bold text-black/60 uppercase tracking-widest">Order Confirmed - {paymentMethod === 'COD' ? 'Cash on Delivery' : 'UPI Payment Verified'}</p>
+                    <div className="bg-primary text-primary-foreground p-6 rounded-2xl flex justify-between items-center shadow-lg transform scale-[1.02]">
+                       <span className="text-lg font-headline font-bold">Total Disbursed</span>
+                       <span className="text-3xl font-bold text-accent">Rs. {total.toLocaleString('en-IN')}/-</span>
                     </div>
-                  ) : (
-                    <div className="p-4 bg-yellow-50 rounded-2xl border border-yellow-200 flex items-center gap-3">
-                      <Clock className="h-5 w-5 text-yellow-600 animate-pulse" />
-                      <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">Awaiting Admin Payment Verification</p>
-                    </div>
-                  )}
-                </div>
+                 </div>
 
-                <div className="pt-6 border-t border-dashed">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Shipment To</p>
-                  <p className="text-sm font-medium leading-relaxed">
-                    {formData.firstName} {formData.lastName}<br />
-                    {formData.address}, {formData.city}, {formData.zip}
-                  </p>
-                </div>
-
-                <div className="pt-6 border-t border-dashed">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 text-accent">Artisanal Shipment Arrival</p>
-                  <div className="flex items-center gap-4 bg-accent/5 p-5 rounded-2xl border border-accent/20">
-                    <Truck className="h-6 w-6 text-accent shrink-0" />
-                    <div>
-                      <p className="font-bold text-primary text-sm">
-                        {new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { 
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long'
-                        })}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Standard Artisanal Delivery</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2 pt-10 border-t mt-6">
-                  <div className="relative h-20 w-20">
-                    <Image 
-                      src="/v-wood-seal.png" 
-                      alt="V-WOOD Seal" 
-                      fill 
-                      className="object-contain drop-shadow-md" 
-                    />
-                  </div>
-                  <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-[0.4em] mt-1">Official Masterpiece Seal</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex justify-center">
-               <Button asChild size="lg" className="h-16 px-12 bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 text-lg">
-                <Link href="/">Back to Storefront</Link>
-              </Button>
-            </div>
+                 <div className="flex gap-4 pt-4">
+                    <Button variant="outline" className="flex-1 h-14 rounded-2xl font-bold text-lg" asChild>
+                      <Link href="/profile">View History</Link>
+                    </Button>
+                    <Button className="flex-1 h-14 rounded-2xl font-bold text-lg bg-accent text-accent-foreground" asChild>
+                      <Link href="/">Back to Studio</Link>
+                    </Button>
+                 </div>
+               </CardContent>
+             </Card>
           </div>
         </main>
       </div>
@@ -430,6 +416,105 @@ export default function CheckoutPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-8 p-8">
+                  <>
+                  {paymentError && (
+                    <div className="p-4 bg-destructive/10 border-2 border-destructive/20 rounded-2xl flex items-center gap-4 animate-in shake duration-500">
+                      <AlertCircle className="h-6 w-6 text-destructive" />
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-destructive uppercase tracking-widest">Transaction Error</p>
+                        <p className="text-sm text-primary font-medium">{paymentError}</p>
+                      </div>
+                      <Button variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => setPaymentError(null)}>Retry</Button>
+                    </div>
+                  )}
+
+                  {isRedirecting ? (
+                    <div className="py-20 flex flex-col items-center justify-center space-y-6 animate-in fade-in duration-500">
+                      <div className="relative">
+                        <Loader2 className="h-16 w-16 text-accent animate-spin" />
+                        <ShieldCheck className="h-6 w-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                      </div>
+                      <div className="text-center space-y-2">
+                        <h3 className="text-xl font-headline font-bold">Redirecting to Secure Gateway</h3>
+                        <p className="text-xs text-muted-foreground uppercase tracking-[0.2em]">Authenticating with V-WOOD PAY Network...</p>
+                      </div>
+                    </div>
+                  ) : gatewayMode ? (
+                    <div className="space-y-8 animate-in zoom-in duration-500 py-6 max-w-lg mx-auto">
+                        <div className="bg-white rounded-[2.5rem] border-4 border-primary/5 shadow-2xl p-10 space-y-8 relative overflow-hidden">
+                           <div className="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-16 -mt-16" />
+                           
+                           <div className="flex items-center justify-between">
+                             <div className="h-8 w-24 bg-muted/30 rounded flex items-center justify-center grayscale text-[10px] font-black italic">
+                               {formData.cardNumber.startsWith('4') ? 'VISA Secure' : 'Mastercard ID Check'}
+                             </div>
+                             <div className="flex items-center gap-2 text-primary">
+                               <ShieldCheck className="h-5 w-5 text-accent" />
+                               <span className="text-xs font-bold uppercase tracking-widest">GATEWAY ACTIVE</span>
+                             </div>
+                           </div>
+
+                           <div className="text-center space-y-4">
+                             <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto border-4 border-white shadow-lg">
+                               <Clock className="h-10 w-10 text-accent animate-pulse" />
+                             </div>
+                             <div className="space-y-2">
+                               <h3 className="text-2xl font-headline font-bold text-primary">Verification Required</h3>
+                               <p className="text-xs text-muted-foreground leading-relaxed px-10">
+                                 A direct bank transfer of <span className="text-primary font-black">Rs. {total.toLocaleString('en-IN')}</span> to <span className="text-accent underline decoration-2">{storeSettings.ownerName}</span> is pending. Enter OTP.
+                               </p>
+                             </div>
+                           </div>
+
+                           <div className="space-y-6">
+                             <div className="space-y-2">
+                               <Label htmlFor="otp" className="sr-only">Enter OTP</Label>
+                               <div className="relative">
+                                 <Input 
+                                   id="otp" 
+                                   placeholder="0 0 0 0 0 0" 
+                                   maxLength={6}
+                                   value={formData.otp} 
+                                   onChange={(e) => {
+                                     const val = e.target.value.replace(/\D/g, '');
+                                     setFormData(prev => ({ ...prev, otp: val }));
+                                   }}
+                                   className="h-20 rounded-2xl text-center text-4xl font-black tracking-[0.5em] border-primary/10 focus:border-accent bg-muted/5 shadow-inner transition-all"
+                                 />
+                               </div>
+                               <div className="flex justify-between items-center px-2">
+                                 <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Expires in 03:00</div>
+                                 <button className="text-[10px] font-bold text-accent hover:text-accent/80 uppercase tracking-widest transition-colors">Resend Code</button>
+                               </div>
+                             </div>
+
+                             <Button 
+                               className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl shadow-accent/20 transition-all hover:scale-[1.02] active:scale-95 group"
+                               onClick={() => handleOtpSubmit(formData.otp)}
+                               disabled={isProcessing || formData.otp.length < 6}
+                             >
+                               {isProcessing ? (
+                                 <div className="flex items-center gap-3">
+                                   <Loader2 className="animate-spin h-6 w-6" />
+                                   <span>Processing Settlement...</span>
+                                 </div>
+                               ) : (
+                                 <div className="flex items-center gap-3">
+                                   <span>Confirm Transfer</span>
+                                   <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                                 </div>
+                               )}
+                             </Button>
+                           </div>
+
+                           <div className="pt-6 border-t border-dashed flex justify-center gap-8 opacity-20 filter grayscale">
+                             <div className="text-[8px] font-black tracking-tighter">PCI-DSS COMPLIANT</div>
+                             <div className="text-[8px] font-black tracking-tighter">SECURED BY MASTERPASS</div>
+                           </div>
+                        </div>
+                        <Button variant="ghost" className="w-full text-muted-foreground hover:text-destructive text-xs font-bold uppercase tracking-widest" onClick={() => {setGatewayMode(false); setOtpMode(false);}}>Cancel Transaction</Button>
+                    </div>
+                  ) : (
                   <RadioGroup 
                     value={paymentMethod} 
                     onValueChange={(val) => {
@@ -470,6 +555,7 @@ export default function CheckoutPage() {
                       </Label>
                     </div>
                   </RadioGroup>
+                  )}
 
                   <div className="space-y-6 pt-6 border-t">
                     {paymentMethod === 'UPI' && (
@@ -499,10 +585,15 @@ export default function CheckoutPage() {
                                  className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-2xl transition-all hover:scale-[1.02] active:scale-95"
                                  onClick={async () => {
                                    setIsProcessing(true);
-                                   setPaymentStatus('verifying');
+                                   setPaymentStatus('verifying'); // "Checking with Bank..."
                                    await new Promise(r => setTimeout(r, 2500));
-                                   setPaymentStatus('admin_verification');
+                                   
+                                   setPaymentStatus('request_processing'); // "Extracting ₹X via NPCI..."
                                    await new Promise(r => setTimeout(r, 2000));
+                                   
+                                   setPaymentStatus('admin_verification'); // "Settling instantly with Admin..."
+                                   await new Promise(r => setTimeout(r, 2000));
+                                   
                                    finalizeOrder();
                                  }}
                                >
@@ -606,91 +697,100 @@ export default function CheckoutPage() {
                       </div>
                     )}
 
-                    {paymentMethod === 'Card' && !otpMode && (
+                    {paymentMethod === 'Card' && !gatewayMode && !isRedirecting && (
                       <div className="space-y-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="space-y-2">
-                          <Label htmlFor="cardName">Cardholder Name</Label>
-                          <Input 
-                            id="cardName" 
-                            placeholder="J NOAH" 
-                            value={formData.cardName} 
-                            onChange={handleInputChange} 
-                            className="h-12 rounded-xl text-lg uppercase font-medium"
-                            disabled={isProcessing}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="cardNumber" className={cn(formData.cardNumber && !isCardNumberValid(formData.cardNumber) && "text-destructive")}>
-                            Card Number
-                          </Label>
-                          <Input 
-                            id="cardNumber" 
-                            placeholder="1234 5678 1234 5678" 
-                            value={formData.cardNumber} 
-                            onChange={handleInputChange} 
-                            className={cn(
-                              "h-12 rounded-xl text-lg tracking-[0.2em]",
-                              formData.cardNumber && !isCardNumberValid(formData.cardNumber) && "border-destructive"
-                            )}
-                            disabled={isProcessing}
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="expiry">Expiry</Label>
-                            <Input id="expiry" placeholder="MM/YY" value={formData.expiry} onChange={handleInputChange} className="h-12 rounded-xl" disabled={isProcessing} />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="cvc">CVC</Label>
-                            <Input id="cvc" placeholder="123" value={formData.cvc} onChange={handleInputChange} className="h-12 rounded-xl" disabled={isProcessing} />
-                          </div>
-                        </div>
-                        <div className="p-4 bg-muted/30 rounded-2xl border border-dashed flex items-center gap-3">
-                          <ShieldAlert className="h-5 w-5 text-accent shrink-0" />
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-relaxed">Secured by 256-bit SSL encryption. You will be redirected to your bank's 3D-Secure page for OTP verification.</p>
-                        </div>
-                      </div>
-                    )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="cardNumber" className={cn("text-xs font-bold uppercase tracking-widest text-muted-foreground", formData.cardNumber && !isCardNumberValid(formData.cardNumber) && "text-destructive")}>
+                                  Card Number
+                                </Label>
+                                <div className="relative group">
+                                  <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                                  <Input 
+                                    id="cardNumber" 
+                                    placeholder="0000 0000 0000 0000" 
+                                    value={formData.cardNumber} 
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim().slice(0, 19);
+                                      setFormData(prev => ({ ...prev, cardNumber: val }));
+                                    }} 
+                                    className={cn(
+                                      "pl-12 h-14 rounded-2xl text-lg tracking-[0.2em] font-mono border-2",
+                                      formData.cardNumber && !isCardNumberValid(formData.cardNumber) ? "border-destructive bg-red-50" : "focus:border-accent"
+                                    )}
+                                    disabled={isProcessing}
+                                  />
+                                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    {formData.cardNumber.startsWith('4') && <div className="text-[10px] font-black italic text-blue-600">VISA</div>}
+                                    {formData.cardNumber.startsWith('5') && <div className="text-[10px] font-black italic text-orange-600">MASTERCARD</div>}
+                                    {formData.cardNumber.startsWith('6') && <div className="text-[10px] font-black italic text-green-600">RUPAY</div>}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="cardName" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Cardholder Name</Label>
+                                <Input 
+                                  id="cardName" 
+                                  placeholder="NAME ON CARD" 
+                                  value={formData.cardName} 
+                                  onChange={handleInputChange} 
+                                  className="h-14 rounded-2xl text-lg uppercase font-bold border-2 focus:border-accent"
+                                  disabled={isProcessing}
+                                />
+                              </div>
+                           </div>
 
-                    {paymentMethod === 'Card' && otpMode && (
-                      <div className="space-y-8 animate-in zoom-in duration-500 py-6">
-                        <div className="text-center space-y-3">
-                          <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-accent/20">
-                            <Clock className="h-8 w-8 text-accent animate-pulse" />
-                          </div>
-                          <h3 className="text-xl font-headline font-bold text-primary">3D Secure OTP</h3>
-                          <p className="text-xs text-muted-foreground max-w-xs mx-auto">An OTP has been sent to your registered mobile number ending in •••• 8352</p>
+                           <div className="bg-muted/10 p-8 rounded-[2rem] border-2 border-dashed border-primary/5 space-y-6">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="expiry" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Expiry Date</Label>
+                                  <Input 
+                                    id="expiry" 
+                                    placeholder="MM/YY" 
+                                    value={formData.expiry} 
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/\D/g, '').replace(/(.{2})/, '$1/').slice(0, 5);
+                                      setFormData(prev => ({ ...prev, expiry: val }));
+                                    }} 
+                                    className="h-14 rounded-2xl text-center text-lg font-bold border-2 focus:border-accent" 
+                                    disabled={isProcessing} 
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="cvc" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">CVV / CVC</Label>
+                                  <Input 
+                                    id="cvc" 
+                                    type="password"
+                                    placeholder="•••" 
+                                    maxLength={3}
+                                    value={formData.cvc} 
+                                    onChange={(e) => {
+                                      const val = e.target.value.replace(/\D/g, '');
+                                      setFormData(prev => ({ ...prev, cvc: val }));
+                                    }} 
+                                    className="h-14 rounded-2xl text-center text-lg font-bold border-2 focus:border-accent tracking-widest" 
+                                    disabled={isProcessing} 
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <ShieldCheck className="h-5 w-5 text-accent" />
+                                <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest leading-tight">
+                                  Your card details are encrypted and never stored. 
+                                  Safe & Secure Payment via PCI-DSS standards.
+                                </p>
+                              </div>
+                           </div>
                         </div>
 
-                        <div className="max-w-[240px] mx-auto space-y-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="otp" className="sr-only">Enter OTP</Label>
-                            <Input 
-                              id="otp" 
-                              placeholder="• • • • • •" 
-                              maxLength={6}
-                              value={formData.otp} 
-                              onChange={(e) => {
-                                const val = e.target.value.replace(/\D/g, '');
-                                setFormData(prev => ({ ...prev, otp: val }));
-                              }}
-                              className="h-16 rounded-2xl text-center text-3xl font-bold tracking-[0.5em] border-2 focus:border-accent"
-                            />
+                        <div className="p-5 bg-primary/5 rounded-2xl border flex items-center gap-4">
+                          <div className="flex -space-x-2">
+                            <div className="w-8 h-8 rounded-md bg-white border flex items-center justify-center text-[7px] font-black">VISA</div>
+                            <div className="w-8 h-8 rounded-md bg-white border flex items-center justify-center text-[7px] font-black">MC</div>
+                            <div className="w-8 h-8 rounded-md bg-white border flex items-center justify-center text-[7px] font-black">RUP</div>
                           </div>
-                          <Button 
-                            className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl transition-all"
-                            onClick={() => handleOtpSubmit(formData.otp)}
-                            disabled={formData.otp.length < 6}
-                          >
-                            Verify & Pay ₹{total.toLocaleString('en-IN')}
-                          </Button>
-                          <p className="text-[10px] text-center font-bold text-accent uppercase tracking-widest cursor-pointer hover:underline">Resend OTP</p>
-                        </div>
-
-                        <div className="flex items-center justify-center gap-6 pt-4 border-t border-dashed grayscale opacity-50">
-                          <div className="text-[10px] font-bold">VISA</div>
-                          <div className="text-[10px] font-bold">Mastercard</div>
-                          <div className="text-[10px] font-bold">Rupay</div>
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Supports all major credit & debit cards</p>
                         </div>
                       </div>
                     )}
@@ -706,28 +806,31 @@ export default function CheckoutPage() {
                     )}
 
 
-                    <div className="flex gap-4 pt-6 border-t">
-                      <Button variant="outline" className="flex-1 h-14 rounded-2xl text-lg font-bold" onClick={() => setStep(1)} disabled={isProcessing}>
-                        Back
-                      </Button>
-                      <Button 
-                        className="flex-[2] h-14 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-2xl transition-all active:scale-95" 
-                        onClick={() => handleCompleteOrder()}
-                        disabled={!isPaymentValid() || isProcessing}
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                            {paymentStatus === 'requesting' ? 'Requesting...' : 
-                             paymentStatus === 'admin_verification' ? 'Admin Verifying...' : 'Verifying Payment...'}
-                          </>
-                        ) : (
-                          paymentMethod === 'UPI' ? 'Pay Now & Confirm' : 
-                          paymentMethod === 'COD' ? 'Confirm Order' : 'Complete Purchase'
-                        )}
-                      </Button>
-                    </div>
+                    {!gatewayMode && !isRedirecting && (
+                      <div className="flex gap-4 pt-6 border-t">
+                        <Button variant="outline" className="flex-1 h-14 rounded-2xl text-lg font-bold" onClick={() => setStep(1)} disabled={isProcessing}>
+                          Back
+                        </Button>
+                        <Button 
+                          className="flex-[2] h-14 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-2xl transition-all active:scale-95" 
+                          onClick={() => handleCompleteOrder()}
+                          disabled={!isPaymentValid() || isProcessing}
+                        >
+                          {isProcessing ? (
+                            <>
+                              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+                              {paymentStatus === 'requesting' ? 'Requesting...' : 
+                               paymentStatus === 'admin_verification' ? 'Admin Verifying...' : 'Verifying Payment...'}
+                            </>
+                          ) : (
+                            paymentMethod === 'UPI' ? 'Pay Now & Confirm' : 
+                            paymentMethod === 'COD' ? 'Confirm Order' : 'Complete Purchase'
+                          )}
+                        </Button>
+                      </div>
+                    )}
                   </div>
+                  </>
                 </CardContent>
               </Card>
             )}

@@ -99,10 +99,10 @@ export function Navbar() {
     }
 
     return (
-      <div className="flex items-center gap-10">
+      <div className="flex items-center gap-8">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all outline-none">
+            <button className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all outline-none">
               Shopping
               <ChevronDown className="h-3 w-3" />
             </button>
@@ -118,12 +118,10 @@ export function Navbar() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About Us</Link>
-        {userName !== "Guest" && (
-          <Link href="/orders" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">Order History</Link>
-        )}
+        <Link href="/about" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">About Us</Link>
+        <Link href="/orders" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">Order History</Link>
         {isAdmin && (
-          <Link href="/admin" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Admin Dashboard</Link>
+          <Link href="/admin" className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent hover:text-accent/80 transition-all border-b border-accent/30 pb-0.5">Admin Dashboard</Link>
         )}
       </div>
     );
@@ -135,7 +133,7 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
       <div className="wide-container h-24 flex items-center justify-between">
         <div className="flex items-center gap-12">
-          <Link href="/" className="flex items-center gap-4 group">
+          <Link href="/" className="flex items-center gap-6 group">
             <div className="relative h-14 w-36 transition-transform duration-500 group-hover:scale-105">
               <Image 
                 src={storeSettings.logoUrl}
@@ -145,8 +143,7 @@ export function Navbar() {
                 priority
               />
             </div>
-            <div className="h-8 w-px bg-primary/10 hidden md:block" />
-            <span className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] hidden md:block mt-1">
+            <span className="text-[11px] font-bold text-accent uppercase tracking-[0.4em] hidden xl:block mt-1 border-l border-primary/10 pl-6">
               since 1986
             </span>
           </Link>
@@ -329,12 +326,10 @@ export function Navbar() {
                           About The Studio
                         </Link>
 
-                        {userName !== "Guest" && (
-                          <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
-                            <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
-                            Order History
-                          </Link>
-                        )}
+                        <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          Order History
+                        </Link>
 
                         {isAdmin && (
                           <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">

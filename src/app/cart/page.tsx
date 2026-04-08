@@ -131,31 +131,10 @@ export default function CartPage() {
               </div>
 
 
-              {userName === "Guest" && (
-                <div className="mb-5 p-4 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center gap-3">
-                  <LogIn className="h-5 w-5 text-amber-600 shrink-0" />
-                  <div>
-                    <p className="text-xs font-bold text-amber-800 uppercase tracking-widest">Login Required</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Please sign in to complete your purchase.</p>
-                  </div>
-                </div>
-              )}
-
               <Button
                 size="lg"
                 className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
-                onClick={() => {
-                  if (userName === "Guest") {
-                    toast({
-                      variant: "destructive",
-                      title: "Login Required",
-                      description: "Please sign in to proceed to checkout.",
-                    });
-                    router.push("/login");
-                    return;
-                  }
-                  router.push("/checkout");
-                }}
+                onClick={() => router.push("/checkout")}
               >
                 Proceed to Checkout
                 <ArrowRight className="ml-2 h-5 w-5" />

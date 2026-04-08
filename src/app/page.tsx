@@ -22,7 +22,7 @@ export default function Home() {
   useEffect(() => {
     setMounted(true);
     const timer = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+      setCurrentTime(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -37,143 +37,166 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background selection:bg-accent/40">
       <Navbar />
       
       <main className="flex-1">
-        {/* Hero Section - Elevated Black Box Showcase */}
-        <section className="relative min-h-screen flex items-center bg-background text-primary overflow-hidden py-16 md:py-24">
-          <div className="wide-container relative z-20 w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-32 items-center">
-              <div className="max-w-3xl order-2 lg:order-1 animate-in fade-in slide-in-from-left duration-1000">
-                <div className="flex flex-col gap-6 mb-8">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-accent text-accent-foreground text-xs font-bold uppercase tracking-widest w-fit">
-                      <Layers className="h-4 w-4" />
-                      Artisanal Excellence
-                    </div>
-                    {mounted && userName !== "Guest" && (
-                      <div className="flex items-center gap-3 px-4 py-1.5 rounded-full bg-primary/5 backdrop-blur-md border border-primary/10 text-primary text-xs font-bold animate-in fade-in slide-in-from-right duration-700 w-fit">
-                        <Avatar className="h-6 w-6 border border-primary/10">
-                          <AvatarImage src={userPhoto} alt={userName} />
-                          <AvatarFallback className="bg-primary/10 text-primary">
-                            <User className="h-3 w-3" />
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>Welcome, {userName}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <h1 className="text-6xl md:text-8xl 2xl:text-9xl font-headline font-bold mb-10 leading-[1.1] tracking-tight">
-                  Capturing <br /><span className="text-accent italic">Nature's Pulse.</span>
-                </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground mb-12 font-body max-w-2xl leading-relaxed">
-                  V-WOOD QUARTZ transforms raw timber into high-precision timepieces, merging heritage woodworking with modern quartz accuracy since 1986.
-                </p>
-                <div className="flex flex-wrap gap-6">
-                  <Button asChild size="lg" className="h-16 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-12 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 text-lg">
-                    <Link href="#collection">Explore Collection</Link>
-                  </Button>
-                </div>
-              </div>
+        {/* Luxury Hero Section - Centered Luxury Look */}
+        <section className="relative min-h-[85vh] flex flex-col items-center justify-start bg-[#0a0a0a] overflow-hidden pt-16 pb-24">
+          {/* Ambient Background Texture/Glow */}
+          <div className="absolute inset-0 z-0">
+             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80&w=2000')] bg-cover bg-center opacity-10 grayscale" />
+             <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/80 via-transparent to-[#0a0a0a]" />
+          </div>
 
-              {/* Hero Image Section - Elegant "Small Frame" Gallery */}
-              <div className="relative order-1 lg:order-2 flex items-center justify-center animate-in fade-in zoom-in duration-1000">
-                <div className="relative w-full max-w-md lg:max-w-lg aspect-square bg-black rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] border-[18px] border-primary group transition-all duration-700 hover:scale-105">
-                  <img
-                    src={storeSettings.heroImageUrl}
-                    alt="V-WOOD QUARTZ Heritage"
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1563861826100-9cb868fdbe1c?auto=format&fit=crop&q=80&w=1800";
-                    }}
-                  />
-                  {/* Subtle Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40" />
-                  
-                  {/* Bottom Captions */}
-                  <div className="absolute bottom-8 left-8 z-30 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0 text-white">
-                    <p className="text-[9px] font-bold uppercase tracking-[0.5em] text-accent mb-2">Original Frame</p>
-                    <p className="text-2xl font-headline font-bold">Limited Heritage</p>
+          <div className="wide-container relative z-10 w-full flex flex-col items-center text-center space-y-12">
+            {/* Logo Signature */}
+            <div className="animate-in fade-in slide-in-from-top duration-1000">
+               <div className="w-36 h-16 relative mx-auto luxury-glow">
+                  <img src={storeSettings.logoUrl} alt="V-WOOD" className="w-full h-full object-contain" />
+               </div>
+            </div>
+
+            {/* Main Statement */}
+            <div className="space-y-4 animate-in fade-in zoom-in duration-1000 delay-200">
+               <h1 className="flex flex-col md:flex-row items-center justify-center gap-x-8 leading-none">
+                  <span className="text-6xl md:text-[110px] font-headline font-black text-white tracking-[0.05em] uppercase mb-2 md:mb-0">TIMELESS</span>
+                  <span className="text-6xl md:text-[90px] font-['Great_Vibes'] text-accent lowercase">luxury</span>
+               </h1>
+               <div className="flex items-center justify-center gap-6">
+                  <div className="h-[1.5px] w-16 bg-accent/30" />
+                  <p className="text-[11px] font-bold text-accent uppercase tracking-[0.8em] whitespace-nowrap">CRAFTED WITH PRECISION</p>
+                  <div className="h-[1.5px] w-16 bg-accent/30" />
+               </div>
+            </div>
+
+            {/* Digital Precision Clock */}
+            <div className="animate-in fade-in slide-in-from-bottom duration-1000 delay-400">
+               <div className="inline-flex items-center justify-center px-14 py-7 rounded-[3rem] bg-[#111111] border border-white/10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)] group transition-all hover:border-accent/40 luxury-glow">
+                  <span className="text-5xl md:text-7xl font-['Montserrat'] text-accent font-bold tracking-[0.15em]">
+                    {currentTime || "09:40:40 PM"}
+                  </span>
+               </div>
+            </div>
+
+            {/* Centerpiece Showcase & Explore Button Group */}
+            <div className="relative w-full flex flex-col items-center gap-12 animate-in fade-in slide-in-from-bottom duration-[1.5s] delay-600">
+               <div className="relative group max-w-5xl w-full">
+                  <div className="absolute inset-[-8%] bg-accent/5 rounded-full blur-[80px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                  <div className="relative aspect-[16/7] md:aspect-[16/6] w-full rounded-[4rem] luxury-border luxury-glow overflow-hidden bg-black shadow-2xl scale-100 group-hover:scale-[1.01] transition-all duration-1000">
+                     <img
+                       src={storeSettings.heroImageUrl}
+                       alt="Heritage Piece"
+                       className="w-full h-full object-cover transition-transform duration-[6s] group-hover:scale-105"
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 opacity-70" />
+                     <div className="absolute inset-0 border-[20px] border-[#0a0a0a]/60 pointer-events-none" />
                   </div>
-                </div>
-              </div>
+               </div>
+
+               <Button asChild className="h-20 px-16 rounded-full luxury-button text-xl font-bold transition-all relative group overflow-hidden shadow-[0_20px_50px_-10px_rgba(212,175,55,0.4)]">
+                  <Link href="#collection">
+                     <span className="relative z-10 uppercase tracking-[0.2em]">Explore Collection</span>
+                     <div className="absolute inset-0 bg-white/10 translate-y-20 group-hover:translate-y-0 transition-transform duration-500" />
+                  </Link>
+               </Button>
             </div>
           </div>
-          {/* Background decoration */}
-          <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] bg-accent/5 rounded-full blur-[150px] pointer-events-none" />
-          <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-accent/10 rounded-full blur-[120px] pointer-events-none" />
         </section>
-        {/* Visual Category Menu */}
-        <section className="py-12 bg-white/50 border-y border-primary/5">
+        {/* Secondary Statement & Features */}
+        <section className="py-32 bg-[#050505] text-center border-t border-white/5">
+           <div className="wide-container space-y-24">
+              <div className="animate-in fade-in slide-in-from-bottom duration-1000">
+                 <h2 className="flex flex-col md:flex-row items-center justify-center gap-x-6">
+                    <span className="text-4xl md:text-6xl font-['Great_Vibes'] text-accent italic lowercase">precision</span>
+                    <span className="text-4xl md:text-6xl font-headline font-black text-white uppercase tracking-widest">MEETS HERITAGE</span>
+                 </h2>
+                 <div className="h-0.5 w-32 bg-accent/20 mx-auto mt-8" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-20">
+                 <div className="flex flex-col items-center space-y-8 group">
+                    <div className="h-20 w-20 rounded-full luxury-border flex items-center justify-center bg-white/5 shadow-2xl transition-all group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-foreground">
+                       <Zap className="h-8 w-8 text-accent group-hover:text-inherit" />
+                    </div>
+                    <div className="space-y-3">
+                       <h3 className="text-white font-bold text-xs tracking-[0.3em] uppercase">Handcrafted Design</h3>
+                       <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest max-w-[200px] leading-relaxed">
+                          Meticulously carved from the finest natural timber.
+                       </p>
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col items-center space-y-8 group">
+                    <div className="h-20 w-20 rounded-full luxury-border flex items-center justify-center bg-white/5 shadow-2xl transition-all group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-foreground">
+                       <ClockIcon className="h-8 w-8 text-accent group-hover:text-inherit" />
+                    </div>
+                    <div className="space-y-3">
+                       <h3 className="text-white font-bold text-xs tracking-[0.3em] uppercase">Silent Movement</h3>
+                       <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest max-w-[200px] leading-relaxed">
+                          World-class quartz tech for absolute silence.
+                       </p>
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col items-center space-y-8 group">
+                    <div className="h-20 w-20 rounded-full luxury-border flex items-center justify-center bg-white/5 shadow-2xl transition-all group-hover:scale-110 group-hover:bg-accent group-hover:text-accent-foreground">
+                       <ShieldCheck className="h-8 w-8 text-accent group-hover:text-inherit" />
+                    </div>
+                    <div className="space-y-3">
+                       <h3 className="text-white font-bold text-xs tracking-[0.3em] uppercase">Premium Quartz</h3>
+                       <p className="text-white/30 text-[9px] font-bold uppercase tracking-widest max-w-[200px] leading-relaxed">
+                          Uncompromising precision in every single second.
+                       </p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+        </section>
+
+        {/* Visual Category Menu - Luxury Dark Squares */}
+        <section className="py-24 bg-[#0a0a0a]">
           <div className="wide-container">
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8">
               <button 
                 onClick={() => setSelectedCategory(null)}
                 className={cn(
-                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
-                  selectedCategory === null ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
+                  "group flex flex-col items-center justify-center gap-4 w-40 h-40 rounded-[2.5rem] transition-all duration-500 border shadow-2xl",
+                  selectedCategory === null ? "bg-[#141414] border-accent/60 luxury-glow scale-105" : "bg-[#111111] border-white/5 hover:border-accent/40"
                 )}
               >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
-                  <Layers className="h-8 w-8" />
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                  <Layers className="h-6 w-6" />
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">All Collection</span>
+                <span className={cn(
+                  "text-[9px] font-black uppercase tracking-[0.4em] transition-colors",
+                  selectedCategory === null ? "text-accent" : "text-white/40 group-hover:text-white"
+                )}>All Collection</span>
               </button>
-
-              <button 
-                onClick={() => setSelectedCategory("Wall Clock")}
-                className={cn(
-                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
-                  selectedCategory === "Wall Clock" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
-                )}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
-                  <ClockIcon className="h-8 w-8" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Wall Clocks</span>
-              </button>
-              
-              <button 
-                onClick={() => setSelectedCategory("Alarm Clock")}
-                className={cn(
-                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
-                  selectedCategory === "Alarm Clock" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
-                )}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
-                  <AlarmClock className="h-8 w-8" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Alarm Clocks</span>
-              </button>
-
-              <button 
-                onClick={() => setSelectedCategory("Hand Watch")}
-                className={cn(
-                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
-                  selectedCategory === "Hand Watch" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
-                )}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
-                  <Watch className="h-8 w-8" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Hand Watches</span>
-              </button>
-
-              <button 
-                onClick={() => setSelectedCategory("Photo Frame")}
-                className={cn(
-                  "group flex flex-col items-center gap-4 p-8 rounded-[2.5rem] transition-all duration-500 min-w-[160px] border shadow-sm hover:shadow-2xl",
-                  selectedCategory === "Photo Frame" ? "bg-black text-white border-primary" : "hover:bg-black hover:text-white bg-white border-transparent"
-                )}
-              >
-                <div className="w-16 h-16 rounded-2xl bg-accent/10 group-hover:bg-accent flex items-center justify-center text-accent group-hover:text-accent-foreground transition-colors shadow-lg">
-                  <ImageIcon className="h-8 w-8" />
-                </div>
-                <span className="text-[10px] font-bold uppercase tracking-[0.3em]">Photo Frames</span>
-              </button>
+ 
+              {[
+                { label: "Wall Clocks", cat: "Wall Clock", icon: ClockIcon },
+                { label: "Alarm Clocks", cat: "Alarm Clock", icon: AlarmClock },
+                { label: "Hand Watches", cat: "Hand Watch", icon: Watch },
+                { label: "Photo Frames", cat: "Photo Frame", icon: ImageIcon }
+              ].map((item) => (
+                <button 
+                  key={item.cat}
+                  onClick={() => setSelectedCategory(item.cat)}
+                  className={cn(
+                    "group flex flex-col items-center justify-center gap-4 w-40 h-40 rounded-[2.5rem] transition-all duration-500 border shadow-2xl",
+                    selectedCategory === item.cat ? "bg-[#141414] border-accent/60 luxury-glow scale-105" : "bg-[#111111] border-white/5 hover:border-accent/40"
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
+                    <item.icon className="h-6 w-6" />
+                  </div>
+                  <span className={cn(
+                    "text-[9px] font-black uppercase tracking-[0.4em] transition-colors",
+                    selectedCategory === item.cat ? "text-accent" : "text-white/40 group-hover:text-white"
+                  )}>{item.label}</span>
+                </button>
+              ))}
             </div>
           </div>
         </section>
@@ -380,8 +403,13 @@ export default function Home() {
                 <a href="https://www.instagram.com/vwoodquartz?igsh=a3hrdDcyaGxtZjVr" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
                   <Instagram className="h-5 w-5" />
                 </a>
-                <a href="#" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
+                <a href="https://www.facebook.com/share/1CC2E5JPpU/" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
                   <Facebook className="h-5 w-5" />
+                </a>
+                <a href="https://whatsapp.com/channel/0029Va5RBecHFxOz9t2LtO31" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-full border-2 flex items-center justify-center text-muted-foreground hover:bg-accent hover:text-white hover:border-accent transition-all">
+                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z m3.521-11.382C18.335 0.334 15.222 0 12.003 0 5.378 0 0.003 5.378 0.003 12.003c0 2.125 0.55 4.194 1.594 6.01L0 24l6.132-1.61c1.745 0.95 3.738 1.45 5.864 1.45 6.622 0 11.997-5.375 11.997-12c0-3.21 -1.248-6.223-3.504-8.47z m-3.521 16.51c-1.528 0.82-3.218 1.254-4.881 1.254-5.514 0-10.002-4.488-10.002-10.002 0-1.74 0.45-3.447 1.3-4.948l.142-.234-.863-3.153 3.235.849 .228-.135c1.458-.865 3.125-1.322 4.887-1.322 5.513 0 10.002 4.488 10.002 10.002 0 2.673-1.04 5.186-2.924 7.07l-.234 .142z"/>
+                  </svg>
                 </a>
               </div>
             </div>
@@ -398,9 +426,11 @@ export default function Home() {
             <div className="md:col-span-3 space-y-8">
               <h4 className="font-headline text-2xl font-bold text-primary">Contact</h4>
               <ul className="space-y-6 text-sm">
-                <li className="flex gap-4 text-muted-foreground font-bold">
-                  <Phone className="h-5 w-5 shrink-0 text-accent" />
-                  <span>{storeSettings.phone}</span>
+                <li className="flex gap-4 text-muted-foreground font-bold group">
+                  <Phone className="h-5 w-5 shrink-0 text-accent group-hover:scale-110 transition-transform" />
+                  <a href={`tel:${storeSettings.phone}`} className="hover:text-accent transition-colors">
+                    {storeSettings.phone}
+                  </a>
                 </li>
                 <li className="flex gap-4 text-muted-foreground">
                   <MapPin className="h-5 w-5 shrink-0 text-accent" />

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Camera, Star, ClipboardList, LayoutList } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Star, ClipboardList, LayoutList } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Clock as ClockType, Order, Employee, Task } from "@/app/lib/types";
 import { toast } from "@/hooks/use-toast";
@@ -50,7 +50,7 @@ export default function AdminPage() {
     userName,
     userPhoto
   } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'cameras' | 'ratings' | 'tasks' | 'billing'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'ratings' | 'tasks' | 'billing' | 'account'>('products');
   const [empSubTab, setEmpSubTab] = useState<'list' | 'attendance' | 'report'>('list');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -58,6 +58,7 @@ export default function AdminPage() {
   const [isEditEmpOpen, setIsEditEmpOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
+  const [selectedOrderAccount, setSelectedOrderAccount] = useState<Order | null>(null);
 
   const [mounted, setMounted] = useState(false);
   const [payrollDate, setPayrollDate] = useState<Date>(new Date());
@@ -114,6 +115,32 @@ export default function AdminPage() {
     const newDate = new Date(ordersDate);
     newDate.setMonth(newDate.getMonth() + offset);
     setOrdersDate(newDate);
+  };
+
+  const downloadAccountsReport = () => {
+    const headers = ["Order ID", "Customer Name", "Payment Method", "Amount", "Status", "Date", "Transaction ID", "UPI ID / Card Last 4"];
+    const rows = orders.map(order => [
+      order.id,
+      order.customerName,
+      order.paymentMethod,
+      order.total,
+      order.status === 'Delivered' ? 'Paid' : (order.paymentMethod === 'COD' ? 'Pending' : 'Paid'),
+      order.date,
+      order.transactionId || 'N/A',
+      order.paymentMethod === 'UPI' ? (order.upiId || 'N/A') : (order.paymentMethod === 'Card' ? `**** ${order.cardLast4 || '****'}` : 'N/A')
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + headers.join(",") + "\n"
+      + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `VWOOD_Accounts_Report_${new Date().getMonth() + 1}_${new Date().getFullYear()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -397,6 +424,16 @@ export default function AdminPage() {
               variant="ghost"
               className={cn(
                 "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'account' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('account')}
+            >
+              <Wallet className="h-5 w-5" /> Account
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
                 activeTab === 'employees' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
               )}
               onClick={() => setActiveTab('employees')}
@@ -408,16 +445,7 @@ export default function AdminPage() {
                 </span>
               )}
             </Button>
-            <Button
-              variant="ghost"
-              className={cn(
-                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
-                activeTab === 'cameras' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
-              )}
-              onClick={() => setActiveTab('cameras')}
-            >
-              <Camera className="h-5 w-5" /> Camera Access
-            </Button>
+
             <Button
               variant="ghost"
               className={cn(
@@ -1774,75 +1802,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {activeTab === 'cameras' && (
-            <div className="animate-in fade-in duration-500">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-16">
-                <div>
-                  <h1 className="text-5xl font-headline font-bold text-primary">Camera Feeds</h1>
-                  <p className="text-muted-foreground mt-2 text-lg">Secure real-time observation of all locations.</p>
-                </div>
-                <div className="p-4 bg-accent/5 border border-accent/20 rounded-2xl flex items-center gap-3">
-                  <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-sm shadow-red-500" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-primary">LIVE Feed Recording</span>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                {[
-                  { name: "Main Showroom", location: "Morbi HQ", status: "Active", time: "LIVE" },
-                  { name: "Artisan Workshop", location: "Ground Floor", status: "Active", time: "LIVE" },
-                  { name: "Storage Facility", location: "Unit-B", status: "Idle", time: "STAND-BY" },
-                  { name: "Entrance Gate", location: "Security Post", status: "Active", time: "LIVE" }
-                ].map((cam, i) => (
-                  <Card key={i} className={cn(
-                    "bg-white border-2 border-primary/5 shadow-2xl rounded-[3rem] overflow-hidden group transition-all duration-700 hover:border-accent/40",
-                    cam.status === 'Idle' && "grayscale opacity-80"
-                  )}>
-                    <div className="relative aspect-video bg-black flex items-center justify-center overflow-hidden">
-                      <img
-                        src={`https://picsum.photos/seed/camera-${i}/1280/720`}
-                        alt={cam.name}
-                        className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-[20s]"
-                      />
-
-                      <div className="absolute inset-0 pointer-events-none p-8 flex flex-col justify-between">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 shadow-2xl">
-                            <div className={cn("w-2 h-2 rounded-full", cam.status === 'Active' ? "bg-red-600 animate-pulse shadow-red-500 shadow-sm" : "bg-gray-400")} />
-                            <span className="text-[10px] font-bold text-white uppercase tracking-widest">
-                              CAM-0{i + 1}: {cam.time}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 backdrop-blur-[2px]">
-                        <Button variant="ghost" className="rounded-full h-16 w-16 bg-white text-primary hover:bg-accent text-accent-foreground shadow-2xl scale-75 group-hover:scale-100 transition-transform duration-500 p-0">
-                          <RotateCcw className="h-6 w-6 animate-spin-slow" />
-                        </Button>
-                      </div>
-                    </div>
-                    <CardHeader className="p-8">
-                      <div className="flex justify-between items-center">
-                        <div className="space-y-1">
-                          <CardTitle className="text-2xl font-bold text-primary">{cam.name}</CardTitle>
-                          <CardDescription className="flex items-center gap-2">
-                            <MapPin className="h-3 w-3 text-accent" /> {cam.location}
-                          </CardDescription>
-                        </div>
-                        <Badge variant="outline" className={cn(
-                          "rounded-full px-4 h-8 font-bold border-2 transition-all",
-                          cam.status === 'Active' ? "border-green-500/20 text-green-600 bg-green-50" : "border-gray-300 text-gray-400 bg-gray-50"
-                        )}>
-                          {cam.status}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
           {activeTab === 'tasks' && (
             <div className="animate-in fade-in duration-500">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 mb-16">
@@ -2004,6 +1964,251 @@ export default function AdminPage() {
                       <Button className="w-full h-14 bg-accent text-accent-foreground font-bold text-lg rounded-2xl" onClick={handleUpdateTask}>
                         Save Modifications
                       </Button>
+                    </div>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+          {activeTab === 'account' && (
+            <div className="animate-in fade-in duration-500 space-y-12 pb-20">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                <div>
+                  <h1 className="text-5xl font-headline font-bold text-primary">Financial Accounts</h1>
+                  <p className="text-muted-foreground mt-2 text-lg">Detailed payment tracking and merchant settlement records.</p>
+                </div>
+                <Button 
+                  onClick={downloadAccountsReport} 
+                  className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold rounded-full h-14 px-8 shadow-xl transition-all hover:scale-105"
+                >
+                  <FileBarChart2 className="mr-3 h-5 w-5" />
+                  Monthly Report (.CSV)
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-green-50/50">
+                  <CardContent className="p-8">
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-2">Total Settled (Online)</p>
+                    <h3 className="text-3xl font-headline font-bold text-primary">
+                      Rs. {orders.filter(o => o.paymentMethod !== 'COD').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                    </h3>
+                  </CardContent>
+                </Card>
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-yellow-50/50">
+                  <CardContent className="p-8">
+                    <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest mb-2">Pending Collection (COD)</p>
+                    <h3 className="text-3xl font-headline font-bold text-primary">
+                      Rs. {orders.filter(o => o.paymentMethod === 'COD' && o.status !== 'Delivered').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                    </h3>
+                  </CardContent>
+                </Card>
+                <Card className="border-none shadow-xl rounded-[2.5rem] bg-blue-50/50">
+                  <CardContent className="p-8">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-2">Total Orders</p>
+                    <h3 className="text-3xl font-headline font-bold text-primary">{orders.length}</h3>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
+                <CardHeader className="bg-primary text-primary-foreground p-10">
+                  <CardTitle className="text-2xl font-headline font-bold">Transaction Ledger</CardTitle>
+                  <CardDescription className="text-primary-foreground/60">Real-time update of all customer payment activities.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="border-none h-16">
+                          <TableHead className="pl-10 font-bold uppercase tracking-widest text-[10px]">Order & Date</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Customer</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Method</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Payment Details</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Amount</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Status</TableHead>
+                          <TableHead className="pr-10 font-bold uppercase tracking-widest text-[10px] text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {[...orders].reverse().map((order) => (
+                          <TableRow key={order.id} className="h-24 hover:bg-muted/30 transition-colors">
+                            <TableCell className="pl-10">
+                              <div className="space-y-1">
+                                <p className="font-black text-sm text-primary">{order.id}</p>
+                                <p className="text-[10px] text-muted-foreground font-medium italic">{order.date}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <p className="font-bold text-primary uppercase tracking-tighter">{order.customerName}</p>
+                              <p className="text-[10px] text-muted-foreground">{order.customerPhone}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {order.paymentMethod === 'UPI' && <Smartphone className="h-4 w-4 text-purple-500" />}
+                                {order.paymentMethod === 'Card' && <CreditCard className="h-4 w-4 text-blue-500" />}
+                                {order.paymentMethod === 'COD' && <Banknote className="h-4 w-4 text-green-500" />}
+                                <span className="text-xs font-bold">{order.paymentMethod}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {order.transactionId && (
+                                  <div className="flex items-center gap-1.5 grayscale opacity-60">
+                                    <span className="text-[8px] font-black border px-1 rounded bg-muted">TXN</span>
+                                    <span className="text-[9px] font-mono">{order.transactionId}</span>
+                                  </div>
+                                )}
+                                {order.paymentMethod === 'UPI' && order.upiId && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[8px] font-black border px-1 rounded bg-purple-50 text-purple-600 border-purple-200">UPI</span>
+                                    <span className="text-[9px] font-mono text-purple-700">{order.upiId}</span>
+                                  </div>
+                                )}
+                                {order.paymentMethod === 'Card' && order.cardLast4 && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[8px] font-black border px-1 rounded bg-blue-50 text-blue-600 border-blue-200">CARD</span>
+                                    <span className="text-[9px] font-mono text-blue-700">**** {order.cardLast4}</span>
+                                  </div>
+                                )}
+                                {order.paymentMethod === 'COD' && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[8px] font-black border px-1 rounded bg-green-50 text-green-600 border-green-200">COD</span>
+                                    <span className="text-[9px] font-bold text-green-700">{order.status === 'Delivered' ? 'Collected' : 'Pending'}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-lg font-black text-primary">Rs. {order.total.toLocaleString('en-IN')}</span>
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                className={cn(
+                                  "rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest",
+                                  (order.paymentMethod !== 'COD' || order.status === 'Delivered') ? "bg-green-500 text-white" : "bg-yellow-500 text-white"
+                                )}
+                              >
+                                {(order.paymentMethod !== 'COD' || order.status === 'Delivered') ? "PAID" : "PENDING"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="pr-10 text-right">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="h-9 px-4 rounded-full border-primary/20 hover:border-accent hover:text-accent font-bold text-[10px] uppercase tracking-widest"
+                                onClick={() => setSelectedOrderAccount(order)}
+                              >
+                                Details
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Order Details Modal for Accounts */}
+              <Dialog open={!!selectedOrderAccount} onOpenChange={(open) => !open && setSelectedOrderAccount(null)}>
+                <DialogContent className="max-w-xl p-0 overflow-hidden border-none rounded-[3rem] shadow-2xl">
+                  {selectedOrderAccount && (
+                    <div className="flex flex-col">
+                      <div className="bg-primary p-10 text-primary-foreground">
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40">Acquisition Details</p>
+                            <h2 className="text-3xl font-headline font-bold">Ref: {selectedOrderAccount.id}</h2>
+                          </div>
+                          <Badge className="bg-accent text-accent-foreground font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
+                            {selectedOrderAccount.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-4 text-white/60">
+                          <p className="text-sm font-bold uppercase tracking-widest">{selectedOrderAccount.date}</p>
+                        </div>
+                      </div>
+
+                      <div className="p-10 space-y-10 bg-white">
+                        <div className="grid grid-cols-2 gap-8">
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Customer Details</p>
+                            <p className="font-bold text-primary text-lg leading-tight">{selectedOrderAccount.customerName}</p>
+                            <p className="text-sm text-muted-foreground">{selectedOrderAccount.customerPhone}</p>
+                            {selectedOrderAccount.customerEmail && (
+                              <p className="text-xs text-accent font-bold mt-1">{selectedOrderAccount.customerEmail}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-2 italic line-clamp-2">{selectedOrderAccount.customerAddress}</p>
+                          </div>
+                          <div className="space-y-2 text-right">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Financial Summary</p>
+                            <p className="text-3xl font-headline font-bold text-accent leading-none">Rs. {selectedOrderAccount.total.toLocaleString('en-IN')}</p>
+                            <Badge className={cn(
+                              "mt-2 rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest",
+                              (selectedOrderAccount.paymentMethod !== 'COD' || selectedOrderAccount.status === 'Delivered') ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                            )}>
+                              {(selectedOrderAccount.paymentMethod !== 'COD' || selectedOrderAccount.status === 'Delivered') ? "Settled & Verified" : "Awaiting Collection"}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="p-8 rounded-[2rem] bg-muted/30 border-2 border-dashed border-primary/10 space-y-6">
+                           <div className="flex items-center justify-between">
+                              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Payment Method</p>
+                              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border shadow-sm">
+                                {selectedOrderAccount.paymentMethod === 'UPI' && <Smartphone className="h-4 w-4 text-purple-500" />}
+                                {selectedOrderAccount.paymentMethod === 'Card' && <CreditCard className="h-4 w-4 text-blue-500" />}
+                                {selectedOrderAccount.paymentMethod === 'COD' && <Banknote className="h-4 w-4 text-green-500" />}
+                                <span className="text-xs font-black uppercase tracking-widest">
+                                  {selectedOrderAccount.paymentMethod} Payment
+                                </span>
+                              </div>
+                           </div>
+
+                           <div className="space-y-4 pt-4 border-t border-primary/5">
+                              {selectedOrderAccount.transactionId && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-muted-foreground">Transaction ID</span>
+                                  <span className="font-mono text-sm font-bold text-primary">{selectedOrderAccount.transactionId}</span>
+                                </div>
+                              )}
+                              {selectedOrderAccount.paymentMethod === 'UPI' && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-muted-foreground">Customer UPI ID</span>
+                                  <span className="font-mono text-sm font-bold text-purple-600">{selectedOrderAccount.upiId || 'N/A'}</span>
+                                </div>
+                              )}
+                              {selectedOrderAccount.paymentMethod === 'Card' && (
+                                <>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-muted-foreground">Cardholder Name</span>
+                                    <span className="font-bold text-sm text-primary uppercase">{selectedOrderAccount.cardHolderName || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-xs font-bold text-muted-foreground">Card Detail</span>
+                                    <span className="font-mono text-sm font-bold text-blue-600">XXXX XXXX XXXX {selectedOrderAccount.cardLast4 || 'XXXX'}</span>
+                                  </div>
+                                </>
+                              )}
+                              {selectedOrderAccount.paymentMethod === 'COD' && (
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-muted-foreground">COD Fulfillment</span>
+                                  <span className="text-sm font-bold text-green-600 uppercase tracking-widest">
+                                    {selectedOrderAccount.status === 'Delivered' ? 'Fully Collected' : 'Pending Delivery'}
+                                  </span>
+                                </div>
+                              )}
+                           </div>
+                        </div>
+
+                        <Button 
+                          className="w-full h-14 rounded-2xl bg-primary text-white font-bold"
+                          onClick={() => setSelectedOrderAccount(null)}
+                        >
+                          Close Detail View
+                        </Button>
+                      </div>
                     </div>
                   )}
                 </DialogContent>

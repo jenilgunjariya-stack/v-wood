@@ -148,21 +148,7 @@ export function ClockCard({ clock }: { clock: Clock }) {
           <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[48px] mb-4">
             {clock.description}
           </p>
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-accent/5 border border-accent/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
-            <div className="h-10 w-10 rounded-full bg-accent text-accent-foreground flex items-center justify-center shadow-lg shrink-0">
-              <Truck className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">Guaranteed Delivery</p>
-              <p className="text-sm font-bold text-primary leading-none">
-                {new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { 
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'short'
-                })}
-              </p>
-            </div>
-          </div>
+
         </CardContent>
       </Link>
       <CardFooter className="p-8 pt-0 flex items-center justify-between">

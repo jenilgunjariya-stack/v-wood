@@ -15,6 +15,8 @@ export interface StoreSettings {
   paymentQrCodeUrl: string;
   locationUrl: string;
   upiId: string;
+  bankName: string;
+  accountNumber: string;
 }
 
 const INITIAL_PRODUCTS: Clock[] = [
@@ -91,7 +93,9 @@ const INITIAL_SETTINGS: StoreSettings = {
   ownerName: "Jenil Nileshbhai Gunjariya",
   paymentQrCodeUrl: "https://picsum.photos/seed/qr-code/400/400",
   locationUrl: "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac",
-  upiId: "jenilgunjariya@oksbi"
+  upiId: "jenilgunjariya@oksbi",
+  bankName: "State Bank of India",
+  accountNumber: "392740835201"
 };
 
 interface StoreContextType {

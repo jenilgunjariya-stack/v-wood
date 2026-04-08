@@ -35,15 +35,6 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
 
   const handleAddToCart = () => {
     if (isOutOfStock) return;
-    if (userName === "Guest") {
-      toast({
-        variant: "destructive",
-        title: "Login Required",
-        description: "Please sign in to add items to your cart.",
-      });
-      router.push("/login");
-      return;
-    }
     addToCart(clock);
     toast({
       title: "Added to Cart",
@@ -53,15 +44,6 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
 
   const handleBuyNow = () => {
     if (isOutOfStock) return;
-    if (userName === "Guest") {
-      toast({
-        variant: "destructive",
-        title: "Login Required",
-        description: "Please sign in to purchase this product.",
-      });
-      router.push("/login");
-      return;
-    }
     addToCart(clock);
     router.push("/checkout");
   };

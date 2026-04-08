@@ -38,8 +38,13 @@ export interface Order {
   customerName: string;
   customerAddress: string;
   customerPhone: string;
+  customerEmail?: string;
   paymentMethod: 'Card' | 'UPI' | 'COD' | 'In-Shop';
   userName?: string;
+  transactionId?: string;
+  cardLast4?: string;
+  cardHolderName?: string;
+  upiId?: string;
 }
 
 export interface LogisticsLog {
