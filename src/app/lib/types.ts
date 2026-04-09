@@ -72,3 +72,12 @@ export interface Task {
   status: 'Completed' | 'Pending' | 'Not Applicable';
   createdAt: string;
 }
+
+export interface HelpRequest {
+  id: string;
+  name: string;
+  contact: string;
+  message: string;
+  status: 'Pending' | 'Resolved';
+  date: string;
+}

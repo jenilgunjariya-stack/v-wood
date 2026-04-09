@@ -55,7 +55,7 @@ export default function CartPage() {
                       <h3 className="text-xl font-headline font-bold text-primary">{item.name}</h3>
                       <p className="text-sm text-muted-foreground">{item.style}</p>
                     </div>
-                    <p className="text-lg font-bold text-accent">Rs. {item.price.toLocaleString('en-IN')}/-</p>
+                                        <p className="text-lg font-bold text-accent">RS. {item.price.toLocaleString('en-IN')}/-</p>
                   </div>
                   
                   <div className="flex items-center justify-between mt-4">
@@ -102,7 +102,7 @@ export default function CartPage() {
               <div className="space-y-4 mb-8">
                   <div className="flex justify-between text-muted-foreground">
                     <span>Subtotal</span>
-                    <span>Rs. {subtotal.toLocaleString('en-IN')}/-</span>
+                                        <span>RS. {subtotal.toLocaleString('en-IN')}/-</span>
                   </div>
                   <div className="flex justify-between text-muted-foreground">
                     <span>Shipping</span>
@@ -110,7 +110,7 @@ export default function CartPage() {
                   </div>
                   <div className="pt-4 border-t flex justify-between text-xl font-bold text-primary">
                     <span>Total</span>
-                    <span>Rs. {total.toLocaleString('en-IN')}/-</span>
+                                        <span>RS. {total.toLocaleString('en-IN')}/-</span>
                   </div>
               </div>
 

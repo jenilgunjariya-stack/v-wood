@@ -24,7 +24,8 @@ import {
   Home,
   Heart,
   Package,
-  Truck
+  Truck,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,6 +94,7 @@ export function Navbar() {
       return (
         <div className="flex items-center gap-10">
           <Link href="/about" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">About</Link>
+          <Link href="/help" className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary/70 hover:text-accent transition-all">Help Centre</Link>
           <Link href="/delivery" className="text-[11px] font-bold uppercase tracking-[0.2em] text-accent hover:text-accent/80 transition-all">Logistics Portal</Link>
         </div>
       );
@@ -119,7 +121,10 @@ export function Navbar() {
           </DropdownMenuContent>
         </DropdownMenu>
         <Link href="/about" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">About Us</Link>
-        <Link href="/orders" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">Order History</Link>
+        <Link href="/help" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">Help Centre</Link>
+        {userName !== "Guest" && (
+          <Link href="/orders" className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary hover:text-accent transition-all">Order History</Link>
+        )}
         {isAdmin && (
           <Link href="/admin" className="text-[10px] font-bold uppercase tracking-[0.3em] text-accent hover:text-accent/80 transition-all border-b border-accent/30 pb-0.5">Admin Dashboard</Link>
         )}
@@ -286,6 +291,11 @@ export function Navbar() {
                           <Info className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
                           About The Studio
                         </Link>
+
+                        <Link href="/help" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <HelpCircle className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          Help Centre
+                        </Link>
                         <Link href="/delivery" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">
                           <Truck className="h-5 w-5 group-hover:scale-110 transition-transform" />
                           Logistics Portal
@@ -326,10 +336,12 @@ export function Navbar() {
                           About The Studio
                         </Link>
 
-                        <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
-                          <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
-                          Order History
-                        </Link>
+                        {userName !== "Guest" && (
+                          <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                            <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                            Order History
+                          </Link>
+                        )}
 
                         {isAdmin && (
                           <Link href="/admin" className="flex items-center gap-4 p-5 rounded-2xl bg-accent/5 border border-accent/10 text-accent transition-all font-bold text-sm group">

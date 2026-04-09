@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckCircle, Truck, CreditCard, ShieldCheck, Wallet, Banknote, Smartphone, AlertCircle, QrCode, ExternalLink, Info, Loader2, ArrowRight, ShieldAlert, Clock } from "lucide-react";
+import { CheckCircle, Truck, CreditCard, ShieldCheck, Wallet, Banknote, Smartphone, AlertCircle, QrCode, ExternalLink, Info, Loader2, ArrowRight, ShieldAlert, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Order } from "@/app/lib/types";
@@ -42,6 +42,7 @@ export default function CheckoutPage() {
     phone: "",
     address: "",
     city: "",
+    state: "",
     zip: "",
     upiId: "",
     cardNumber: "",
@@ -55,6 +56,7 @@ export default function CheckoutPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [timer, setTimer] = useState(180); // 3 minutes
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -78,6 +80,68 @@ export default function CheckoutPage() {
   const selectedAppObj = upiApp ? UPI_APPS.find(a => a.id === upiApp) : null;
   const isUpiMatch = selectedAppObj?.handles.some(h => formData.upiId.toLowerCase().endsWith(h));
 
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        variant: "destructive",
+        title: "Geolocation not supported",
+        description: "Your browser does not support location services.",
+      });
+      return;
+    }
+
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+          );
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const addr = data.address;
+            const fullAddress = [
+              addr.road,
+              addr.suburb,
+              addr.neighbourhood
+            ].filter(Boolean).join(", ") || data.display_name;
+
+            setFormData(prev => ({
+              ...prev,
+              address: fullAddress,
+              city: addr.city || addr.town || addr.village || "",
+              state: addr.state || "",
+              zip: addr.postcode || ""
+            }));
+
+            toast({
+              title: "Location detected",
+              description: `Successfully filled address for ${addr.city || 'your area'}.`,
+            });
+          }
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Location error",
+            description: "Failed to fetch address details. Please enter manually.",
+          });
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      },
+      (error) => {
+        setIsFetchingLocation(false);
+        toast({
+          variant: "destructive",
+          title: "Permission denied",
+          description: "Please enable location access in your browser settings.",
+        });
+      }
+    );
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
@@ -89,7 +153,7 @@ export default function CheckoutPage() {
   const isCvcValid = (cvc: string) => /^\d{3}$/.test(cvc);
   const isPhoneValid = (phone: string) => /^\+?(\d{10,12})$/.test(phone.replace(/\s/g, ''));
 
-  const isStep1Valid = formData.firstName && formData.lastName && formData.phone && formData.address && formData.city && formData.zip;
+  const isStep1Valid = formData.firstName && formData.lastName && formData.phone && formData.address && formData.city && formData.state && formData.zip;
 
   const isPaymentValid = () => {
     if (paymentMethod === 'COD') return true;
@@ -231,7 +295,7 @@ export default function CheckoutPage() {
       total: total,
       status: (paymentMethod === 'COD' || paymentMethod === 'UPI' || paymentMethod === 'Card') ? 'Confirmed' : 'Awaiting Verification',
       customerName: `${formData.firstName} ${formData.lastName}`,
-      customerAddress: `${formData.address}, ${formData.city}, ${formData.zip}`,
+      customerAddress: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.zip}`,
       customerPhone: formData.phone,
       customerEmail: formData.email,
       paymentMethod: paymentMethod,
@@ -318,12 +382,12 @@ export default function CheckoutPage() {
                     {cart.map(item => (
                       <div key={item.id} className="flex justify-between items-center bg-muted/5 p-4 rounded-xl border">
                         <span className="font-bold text-sm">{item.name} <span className="text-muted-foreground text-xs ml-2">x{item.quantity}</span></span>
-                        <span className="font-bold text-primary">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}</span>
+                                                 <span className="font-bold text-primary">RS. {(item.price * item.quantity).toLocaleString('en-IN')}/-</span>
                       </div>
                     ))}
                     <div className="bg-primary text-primary-foreground p-6 rounded-2xl flex justify-between items-center shadow-lg transform scale-[1.02]">
                        <span className="text-lg font-headline font-bold">Total Disbursed</span>
-                       <span className="text-3xl font-bold text-accent">Rs. {total.toLocaleString('en-IN')}/-</span>
+                                               <span className="text-3xl font-bold text-accent">RS. {total.toLocaleString('en-IN')}/-</span>
                     </div>
                  </div>
 
@@ -367,7 +431,7 @@ export default function CheckoutPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6 p-8">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="firstName">First Name</Label>
                       <Input id="firstName" placeholder="John" value={formData.firstName} onChange={handleInputChange} className="h-12 rounded-xl" />
@@ -386,18 +450,35 @@ export default function CheckoutPage() {
                     <Input id="phone" placeholder="+91 00000 00000" value={formData.phone} onChange={handleInputChange} className="h-12 rounded-xl" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Full Shipping Address</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="address">Full Shipping Address</Label>
+                      <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 px-3 text-accent hover:text-accent/80 font-bold text-[10px] uppercase tracking-widest gap-2 bg-accent/5 rounded-full"
+                        onClick={fetchLocation}
+                        disabled={isFetchingLocation}
+                      >
+                        {isFetchingLocation ? <Loader2 className="h-3 w-3 animate-spin" /> : <MapPin className="h-3 w-3" />}
+                        Use Current Location
+                      </Button>
+                    </div>
                     <Input id="address" placeholder="123 Wood Street" value={formData.address} onChange={handleInputChange} className="h-12 rounded-xl" />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="city">City</Label>
                       <Input id="city" placeholder="Morbi" value={formData.city} onChange={handleInputChange} className="h-12 rounded-xl" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="zip">PIN Code</Label>
-                      <Input id="zip" placeholder="363641" value={formData.zip} onChange={handleInputChange} className="h-12 rounded-xl" />
+                      <Label htmlFor="state">State</Label>
+                      <Input id="state" placeholder="Gujarat" value={formData.state} onChange={handleInputChange} className="h-12 rounded-xl" />
                     </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="zip">PIN Code</Label>
+                    <Input id="zip" placeholder="363641" value={formData.zip} onChange={handleInputChange} className="h-12 rounded-xl" />
                   </div>
                   <Button 
                     className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl shadow-accent/10 mt-4 transition-all active:scale-95" 
@@ -461,7 +542,7 @@ export default function CheckoutPage() {
                              <div className="space-y-2">
                                <h3 className="text-2xl font-headline font-bold text-primary">Verification Required</h3>
                                <p className="text-xs text-muted-foreground leading-relaxed px-10">
-                                 A direct bank transfer of <span className="text-primary font-black">Rs. {total.toLocaleString('en-IN')}</span> to <span className="text-accent underline decoration-2">{storeSettings.ownerName}</span> is pending. Enter OTP.
+                                                                  A direct bank transfer of <span className="text-primary font-black">RS. {total.toLocaleString('en-IN')}/-</span> to <span className="text-accent underline decoration-2">{storeSettings.ownerName}</span> is pending. Enter OTP.
                                </p>
                              </div>
                            </div>
@@ -669,7 +750,7 @@ export default function CheckoutPage() {
                                     <div className="space-y-1">
                                       <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Merchant:</span> {storeSettings.ownerName}</p>
                                       <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">UPI ID:</span> {storeSettings.upiId}</p>
-                                      <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Amount:</span> ₹{total.toLocaleString('en-IN')}</p>
+                                                                             <p className="text-sm font-medium"><span className="text-muted-foreground mr-1">Amount:</span> RS. {total.toLocaleString('en-IN')}/-</p>
                                     </div>
                                   </div>
                                 </div>
@@ -801,7 +882,7 @@ export default function CheckoutPage() {
                           <Banknote className="h-10 w-10 text-accent" />
                         </div>
                         <h3 className="text-xl font-headline font-bold text-primary">Cash on Delivery</h3>
-                        <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto">Pay Rs. {total.toLocaleString('en-IN')}/- in cash when your artisanal piece arrives.</p>
+                        <p className="text-sm text-muted-foreground mt-3 max-w-sm mx-auto">Pay RS. {total.toLocaleString('en-IN')}/- in cash when your artisanal piece arrives.</p>
                       </div>
                     )}
 
@@ -854,7 +935,7 @@ export default function CheckoutPage() {
                           <p className="text-[10px] text-primary-foreground/60">Qty: {item.quantity}</p>
                         </div>
                       </div>
-                      <p className="font-bold text-sm">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
+                      <p className="font-bold text-sm">RS. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
                     </div>
                   ))}
                 </div>
@@ -862,7 +943,7 @@ export default function CheckoutPage() {
                 <div className="space-y-4 border-t border-white/10 pt-6">
                   <div className="flex justify-between text-sm text-primary-foreground/60">
                     <span>Subtotal</span>
-                    <span className="font-bold">Rs. {subtotal.toLocaleString('en-IN')}/-</span>
+                    <span className="font-bold">RS. {subtotal.toLocaleString('en-IN')}/-</span>
                   </div>
                   <div className="flex justify-between text-sm text-primary-foreground/60">
                     <span>Shipping</span>
@@ -870,7 +951,7 @@ export default function CheckoutPage() {
                   </div>
                   <div className="flex justify-between text-2xl font-bold pt-4 border-t border-white/20 text-white">
                     <span>Total</span>
-                    <span>Rs. {total.toLocaleString('en-IN')}/-</span>
+                    <span>RS. {total.toLocaleString('en-IN')}/-</span>
                   </div>
                 </div>
 

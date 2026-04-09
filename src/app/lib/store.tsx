@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog } from './types';
+import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog, HelpRequest } from './types';
 
 export interface StoreSettings {
   name: string;
@@ -150,6 +150,10 @@ interface StoreContextType {
   updateTask: (task: Task) => void;
   removeTask: (taskId: string) => void;
   logisticsLogs: LogisticsLog[];
+  helpRequests: HelpRequest[];
+  addHelpRequest: (request: Omit<HelpRequest, 'id' | 'date' | 'status'>) => void;
+  updateHelpRequestStatus: (id: string, status: HelpRequest['status']) => void;
+  removeHelpRequest: (id: string) => void;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -172,6 +176,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [logisticsLogs, setLogisticsLogs] = useState<LogisticsLog[]>([]);
+  const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
@@ -241,6 +246,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try { setLogisticsLogs(JSON.parse(savedLogs)); } catch (e) { }
     }
 
+    const savedHelp = localStorage.getItem('timely_finds_help');
+    if (savedHelp) {
+      try { setHelpRequests(JSON.parse(savedHelp)); } catch (e) { }
+    }
+
     setIsHydrated(true);
 
     // Sync state across multiple tabs instantly
@@ -259,6 +269,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           case 'timely_finds_ratings': setRatings(value); break;
           case 'timely_finds_tasks': setTasks(value); break;
           case 'timely_finds_logs': setLogisticsLogs(value); break;
+          case 'timely_finds_help': setHelpRequests(value); break;
         }
       } catch (err) {
         console.error("Storage sync failed", err);
@@ -623,6 +634,32 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
   };
 
+  const addHelpRequest = (requestData: Omit<HelpRequest, 'id' | 'date' | 'status'>) => {
+    const newRequest: HelpRequest = {
+      ...requestData,
+      id: `HELP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      status: 'Pending',
+      date: new Date().toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      })
+    };
+    const newRequests = [newRequest, ...helpRequests];
+    setHelpRequests(newRequests);
+    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+  };
+
+  const updateHelpRequestStatus = (id: string, status: HelpRequest['status']) => {
+    const newRequests = helpRequests.map(h => h.id === id ? { ...h, status } : h);
+    setHelpRequests(newRequests);
+    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+  };
+
+  const removeHelpRequest = (id: string) => {
+    const newRequests = helpRequests.filter(h => h.id !== id);
+    setHelpRequests(newRequests);
+    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+  };
+
   if (!isHydrated) return null;
 
   return (
@@ -632,7 +669,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addOrder, updateOrderStatus, cancelOrder, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
       login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
       favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings, getUserRating,
-      tasks, addTask, updateTaskStatus, updateTask, removeTask, logisticsLogs
+      tasks, addTask, updateTaskStatus, updateTask, removeTask, logisticsLogs,
+      helpRequests, addHelpRequest, updateHelpRequestStatus, removeHelpRequest
     }}>
       {children}
     </StoreContext.Provider>

@@ -155,11 +155,11 @@ export function ClockCard({ clock }: { clock: Clock }) {
         <div className="flex flex-col">
           {hasDiscount ? (
             <>
-              <span className="text-2xl font-bold text-accent">Rs. {discountPrice.toLocaleString('en-IN')}/-</span>
-              <span className="text-xs font-bold text-muted-foreground/50 line-through">Rs. {clock.price.toLocaleString('en-IN')}/-</span>
+              <span className="text-2xl font-bold text-accent">RS. {discountPrice.toLocaleString('en-IN')}/-</span>
+              <span className="text-xs font-bold text-muted-foreground/50 line-through">RS. {clock.price.toLocaleString('en-IN')}/-</span>
             </>
           ) : (
-            <span className="text-2xl font-bold text-primary">Rs. {clock.price.toLocaleString('en-IN')}/-</span>
+            <span className="text-2xl font-bold text-primary">RS. {clock.price.toLocaleString('en-IN')}/-</span>
           )}
         </div>
         <Button 

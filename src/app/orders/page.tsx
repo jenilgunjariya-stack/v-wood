@@ -34,11 +34,27 @@ export default function OrdersPage() {
     }
   };
 
-  const userOrders = orders.filter(o =>
-    o.userName === userName ||
-    (!o.userName && userName === "Guest") ||
-    o.paymentMethod === "In-Shop"
-  );
+  if (userName === "Guest") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container mx-auto px-4 py-32 text-center">
+          <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-primary/5 mb-8 shadow-inner animate-in zoom-in duration-500">
+            <Package className="h-12 w-12 text-primary" />
+          </div>
+          <h1 className="text-4xl font-headline font-bold text-primary mb-4">Please log in</h1>
+          <p className="text-muted-foreground mb-12 max-w-md mx-auto text-lg leading-relaxed">
+            You need to be logged in to view your order history and track your acquisitions.
+          </p>
+          <Button asChild size="lg" className="h-16 px-12 rounded-full text-lg font-bold shadow-2xl hover:scale-105 transition-all">
+            <Link href="/login">Log In to Account</Link>
+          </Button>
+        </main>
+      </div>
+    );
+  }
+
+  const userOrders = orders.filter(o => o.userName === userName);
   const sortedOrders = [...userOrders].reverse(); // Show newest first
 
   if (userOrders.length === 0) {
@@ -117,7 +133,7 @@ export default function OrdersPage() {
                     <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 shadow-xl">
                       <div className="text-right">
                         <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest leading-none mb-1">Total Paid</p>
-                        <p className="text-3xl font-headline font-bold text-accent leading-none">Rs. {order.total.toLocaleString('en-IN')}/-</p>
+                                                <p className="text-3xl font-headline font-bold text-accent leading-none">RS. {order.total.toLocaleString('en-IN')}/-</p>
                       </div>
                     </div>
                   </div>
@@ -196,8 +212,8 @@ export default function OrdersPage() {
                                   </div>
                                 </div>
                                 <div className="mt-4 sm:mt-0 text-right">
-                                  <p className="text-lg font-bold text-primary tracking-tight">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
-                                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Rs. {item.price.toLocaleString('en-IN')}/- / unit</p>
+                                                                     <p className="text-lg font-bold text-primary tracking-tight">RS. {(item.price * item.quantity).toLocaleString('en-IN')}/-</p>
+                                                                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">RS. {item.price.toLocaleString('en-IN')}/- / unit</p>
                                 </div>
                               </div>
                             ))}
@@ -233,7 +249,7 @@ export default function OrdersPage() {
                             <div className="absolute top-0 right-0 w-20 h-20 bg-white/5 rounded-full -mr-10 -mt-10" />
                             <div className="flex justify-between items-center text-primary-foreground/60 text-[10px] font-bold uppercase tracking-widest">
                               <span>Subtotal</span>
-                              <span>Rs. {order.total.toLocaleString('en-IN')}/-</span>
+                                                             <span>RS. {order.total.toLocaleString('en-IN')}/-</span>
                             </div>
                             <div className="flex justify-between items-center text-primary-foreground/60 text-[10px] font-bold uppercase tracking-widest">
                               <span>Shipping</span>
@@ -241,7 +257,7 @@ export default function OrdersPage() {
                             </div>
                             <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                               <span className="text-xl font-headline font-bold">Total Paid</span>
-                              <span className="text-2xl font-bold text-accent tracking-tighter">Rs. {order.total.toLocaleString('en-IN')}/-</span>
+                                                             <span className="text-2xl font-bold text-accent tracking-tighter">RS. {order.total.toLocaleString('en-IN')}/-</span>
                             </div>
                           </div>
                         </div>

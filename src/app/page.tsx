@@ -418,7 +418,9 @@ export default function Home() {
               <h4 className="font-headline text-2xl font-bold text-primary">Discover</h4>
               <ul className="space-y-5 text-sm font-bold uppercase tracking-widest">
                 <li><Link href="/" className="text-muted-foreground hover:text-accent transition-colors">Catalog</Link></li>
-                <li><Link href="/orders" className="text-muted-foreground hover:text-accent transition-colors">Order History</Link></li>
+                {userName !== "Guest" && (
+                  <li><Link href="/orders" className="text-muted-foreground hover:text-accent transition-colors">Order History</Link></li>
+                )}
                 <li><Link href="/about" className="text-muted-foreground hover:text-accent transition-colors">Our Story</Link></li>
               </ul>
             </div>

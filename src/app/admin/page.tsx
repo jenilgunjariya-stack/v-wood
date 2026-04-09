@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Star, ClipboardList, LayoutList } from "lucide-react";
+import { PlusCircle, Edit, Trash2, Settings, Package, Image as ImageIcon, Save, RefreshCw, User as UserIcon, LogOut, Lock, ShoppingBag, Truck, CheckCircle, MapPin, User, CreditCard, Banknote, Wallet, Box, Users, HandCoins, CheckCircle2, Pencil, Calendar, ChevronLeft, ChevronRight, RotateCcw, X, DollarSign, QrCode, Globe, Smartphone, Clock, AlertTriangle, FileBarChart2, Star, ClipboardList, LayoutList, HelpCircle, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Clock as ClockType, Order, Employee, Task } from "@/app/lib/types";
 import { toast } from "@/hooks/use-toast";
@@ -48,9 +48,12 @@ export default function AdminPage() {
     logout,
     isAdmin,
     userName,
-    userPhoto
+    userPhoto,
+    helpRequests,
+    updateHelpRequestStatus,
+    removeHelpRequest
   } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'ratings' | 'tasks' | 'billing' | 'account'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'ratings' | 'tasks' | 'billing' | 'account' | 'help'>('products');
   const [empSubTab, setEmpSubTab] = useState<'list' | 'attendance' | 'report'>('list');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -470,6 +473,21 @@ export default function AdminPage() {
               variant="ghost"
               className={cn(
                 "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'help' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('help')}
+            >
+              <HelpCircle className="h-5 w-5" /> Help Centre
+              {helpRequests.filter(h => h.status === 'Pending').length > 0 && (
+                <span className="ml-auto w-6 h-6 bg-accent text-accent-foreground text-[10px] flex items-center justify-center rounded-full font-bold">
+                  {helpRequests.filter(h => h.status === 'Pending').length}
+                </span>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
                 activeTab === 'settings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
               )}
               onClick={() => setActiveTab('settings')}
@@ -606,7 +624,7 @@ export default function AdminPage() {
                                 <SelectContent className="rounded-2xl border-none shadow-2xl">
                                   {products.map(p => (
                                     <SelectItem key={p.id} value={p.id} className="h-12 rounded-xl">
-                                      {p.name} - Rs. {p.price.toLocaleString('en-IN')}
+                                                                            {p.name} - RS. {p.price.toLocaleString('en-IN')}/-
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -631,7 +649,7 @@ export default function AdminPage() {
                                         </div>
                                         <div>
                                           <p className="text-sm font-bold text-primary">{item.name}</p>
-                                          <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">Rs. {item.price.toLocaleString('en-IN')} / unit</p>
+                                                                                     <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">RS. {item.price.toLocaleString('en-IN')} / unit</p>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-6">
@@ -675,7 +693,7 @@ export default function AdminPage() {
                            <div className="space-y-4 relative z-10">
                               <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
                                  <span>Subtotal Assessment</span>
-                                 <span>Rs. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}</span>
+                                                                   <span>RS. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}/-</span>
                               </div>
                               <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
                                  <span>Artisanal Tax / Handling</span>
@@ -863,8 +881,8 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                <table className="w-full text-left min-w-[800px]">
                   <thead className="bg-muted/50 border-b">
                     <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       <th className="px-8 py-6">Product</th>
@@ -890,7 +908,7 @@ export default function AdminPage() {
                             {p.category || "General"}
                           </Badge>
                         </td>
-                        <td className="px-8 py-6 font-bold text-primary text-lg">Rs. {p.price.toLocaleString('en-IN')}</td>
+                        <td className="px-8 py-6 font-bold text-primary text-lg">RS. {p.price.toLocaleString('en-IN')}/-</td>
                         <td className="px-8 py-6 text-center">
                           <Badge
                             variant={p.stock > 0 ? "outline" : "destructive"}
@@ -958,7 +976,7 @@ export default function AdminPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-6">
                         <div className="space-y-2">
-                          <Label>Price (₹)</Label>
+                          <Label>Price (Rs.)</Label>
                           <Input type="number" value={editingClock.price} onChange={e => setEditingClock({ ...editingClock, price: parseInt(e.target.value) })} className="h-12" />
                         </div>
                         <div className="space-y-2">
@@ -966,7 +984,7 @@ export default function AdminPage() {
                           <Input type="number" value={editingClock.stock} onChange={e => setEditingClock({ ...editingClock, stock: parseInt(e.target.value) })} className="h-12" />
                         </div>
                         <div className="space-y-2">
-                          <Label>Discount Price (₹)</Label>
+                          <Label>Discount Price (Rs.)</Label>
                           <Input
                             type="number"
                             value={(editingClock as any).discountPrice || ""}
@@ -1075,26 +1093,27 @@ export default function AdminPage() {
                 </Card>
               </div>
 
-              <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                <table className="w-full text-left min-w-[1000px]">
                   <thead className="bg-muted/50 border-b">
                     <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       <th className="px-8 py-6">Customer</th>
                       <th className="px-8 py-6">Product</th>
-                      <th className="px-8 py-6">Rating Given</th>
+                      <th className="px-8 py-6">Rating</th>
+                      <th className="px-8 py-6">Review</th>
                       <th className="px-8 py-6">Date</th>
-                      <th className="px-8 py-6 text-right">Status</th>
+                      <th className="px-8 py-6 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {ratings.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground italic">
+                        <td colSpan={6} className="px-8 py-20 text-center text-muted-foreground italic">
                           No customer ratings recorded yet.
                         </td>
                       </tr>
                     ) : (
-                      ratings.map((rating) => {
+                      [...ratings].reverse().map((rating) => {
                         const product = products.find(p => p.id === rating.productId);
                         return (
                           <tr key={rating.id} className="hover:bg-muted/5 transition-colors">
@@ -1121,19 +1140,34 @@ export default function AdminPage() {
                             <td className="px-8 py-6">
                               <div className="flex items-center gap-2">
                                 <span className="text-xl font-black text-accent">{rating.rating}</span>
-                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">/ 5</span>
                                 <div className="flex items-center gap-0.5 ml-1">
-                                  {[1, 2, 3, 4, 5].map((s) => (
-                                    <Star key={s} className={cn("h-3.5 w-3.5", s <= rating.rating ? "fill-accent text-accent" : "text-muted-foreground/20")} />
-                                  ))}
+                                  <Star className="h-4 w-4 fill-accent text-accent" />
                                 </div>
                               </div>
+                            </td>
+                            <td className="px-8 py-6">
+                              <p className="text-sm text-muted-foreground italic line-clamp-2 max-w-[300px]">
+                                "{rating.comment || "No text provided."}"
+                              </p>
                             </td>
                             <td className="px-8 py-6">
                               <span className="text-sm font-bold text-muted-foreground">{rating.date}</span>
                             </td>
                             <td className="px-8 py-6 text-right">
-                              <Badge className="bg-green-500 text-white border-none text-[9px] uppercase tracking-widest font-bold h-6 px-3">Verified</Badge>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-10 w-10 rounded-full text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  if (confirm("Moderate Review: Are you sure you want to delete this appraisal?")) {
+                                    const newRatings = ratings.filter(r => r.id !== rating.id);
+                                    localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
+                                    window.location.reload(); // Simple way to refresh since we don't have a direct removeRating in store (added later if needed)
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-5 w-5" />
+                              </Button>
                             </td>
                           </tr>
                         );
@@ -1257,14 +1291,14 @@ export default function AdminPage() {
                       <CardContent className="pt-10 p-8">
                         <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3">Monthly Liability</p>
                         <p className="text-4xl font-bold">
-                          ₹{employees.filter(e => e.paymentStatus === 'Pending').reduce((s, e) => s + e.salary, 0).toLocaleString('en-IN')}
+                                                    RS. {employees.filter(e => e.paymentStatus === 'Pending').reduce((s, e) => s + e.salary, 0).toLocaleString('en-IN')}/-
                         </p>
                       </CardContent>
                     </Card>
                   </div>
 
-                  <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
-                    <table className="w-full text-left">
+                  <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                    <table className="w-full text-left min-w-[800px]">
                       <thead className="bg-muted/50 border-b">
                         <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                           <th className="px-8 py-6">Artisan</th>
@@ -1284,7 +1318,7 @@ export default function AdminPage() {
                             <td className="px-8 py-6">
                               <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{emp.role}</span>
                             </td>
-                            <td className="px-8 py-6 font-bold text-primary text-lg">Rs. {emp.salary.toLocaleString('en-IN')}</td>
+                                                         <td className="px-8 py-6 font-bold text-primary text-lg">RS. {emp.salary.toLocaleString('en-IN')}/-</td>
                             <td className="px-8 py-6">
                               <div className="flex flex-col">
                                 <button
@@ -1339,28 +1373,8 @@ export default function AdminPage() {
               )}
 
               {empSubTab === 'attendance' && (
-                <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden animate-in fade-in duration-500">
-                  <div className="p-10 border-b bg-muted/20 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                      <h3 className="font-headline font-bold text-3xl text-primary">Daily Registry</h3>
-                      <p className="text-sm text-muted-foreground mt-2">Record artisanal presence for {todayKey}</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm shadow-green-500/50"></div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Present</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-500/50"></div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Absent</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500 shadow-sm shadow-yellow-500/50"></div>
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Late</span>
-                      </div>
-                    </div>
-                  </div>
-                  <table className="w-full text-left">
+                  <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                    <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-muted/50 border-b">
                       <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                         <th className="px-8 py-6">Artisan</th>
@@ -1561,8 +1575,8 @@ export default function AdminPage() {
                   )}
                 </div>
               </div>
-              <div className="bg-white rounded-[2.5rem] border shadow-2xl overflow-hidden">
-                <table className="w-full text-left">
+              <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                <table className="w-full text-left font-body min-w-[1000px]">
                   <thead className="bg-muted/50 border-b">
                     <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                       <th className="px-8 py-6">Order Reference</th>
@@ -1991,7 +2005,7 @@ export default function AdminPage() {
                   <CardContent className="p-8">
                     <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-2">Total Settled (Online)</p>
                     <h3 className="text-3xl font-headline font-bold text-primary">
-                      Rs. {orders.filter(o => o.paymentMethod !== 'COD').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                                            RS. {orders.filter(o => o.paymentMethod !== 'COD').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
                     </h3>
                   </CardContent>
                 </Card>
@@ -1999,7 +2013,7 @@ export default function AdminPage() {
                   <CardContent className="p-8">
                     <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest mb-2">Pending Collection (COD)</p>
                     <h3 className="text-3xl font-headline font-bold text-primary">
-                      Rs. {orders.filter(o => o.paymentMethod === 'COD' && o.status !== 'Delivered').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                                            RS. {orders.filter(o => o.paymentMethod === 'COD' && o.status !== 'Delivered').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
                     </h3>
                   </CardContent>
                 </Card>
@@ -2213,6 +2227,105 @@ export default function AdminPage() {
                   )}
                 </DialogContent>
               </Dialog>
+            </div>
+          )}
+
+          {activeTab === 'help' && (
+            <div className="animate-in fade-in duration-500">
+              <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-16">
+                <div>
+                  <h1 className="text-5xl font-headline font-bold text-primary">Inquiry Terminal</h1>
+                  <p className="text-muted-foreground mt-2 text-lg">Manage and respond to artisanal collector requests.</p>
+                </div>
+                <div className="flex items-center gap-6">
+                  <div className="px-8 py-4 bg-accent/10 border border-accent/20 rounded-[2rem] flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-accent-foreground shadow-lg">
+                      <MessageSquare className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Awaiting Response</p>
+                      <p className="text-xl font-bold text-primary">{helpRequests.filter(h => h.status === 'Pending').length} Pending Requests</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-[3rem] border shadow-2xl overflow-hidden text-[#000000]">
+                <Table>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow className="h-20 border-none">
+                      <TableHead className="pl-10 font-bold uppercase tracking-widest text-[10px]">Collector & Contact</TableHead>
+                      <TableHead className="font-bold uppercase tracking-widest text-[10px]">Inquiry / Request</TableHead>
+                      <TableHead className="font-bold uppercase tracking-widest text-[10px]">Date</TableHead>
+                      <TableHead className="font-bold uppercase tracking-widest text-[10px]">Fulfillment</TableHead>
+                      <TableHead className="pr-10 font-bold uppercase tracking-widest text-[10px] text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {helpRequests.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-64 text-center">
+                          <div className="flex flex-col items-center gap-4 opacity-40">
+                             <HelpCircle className="h-12 w-12" />
+                             <p className="text-sm font-bold uppercase tracking-widest">No active inquiries</p>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      helpRequests.map((request) => (
+                        <TableRow key={request.id} className="h-28 hover:bg-muted/30 transition-colors">
+                          <TableCell className="pl-10">
+                            <div>
+                               <p className="font-bold text-primary text-base md:text-lg">{request.name}</p>
+                               <p className="text-xs text-accent font-bold mt-1 tracking-tight">{request.contact}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="max-w-md">
+                            <p className="text-sm text-muted-foreground font-medium italic line-clamp-2">
+                              "{request.message}"
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{request.date}</span>
+                          </TableCell>
+                          <TableCell>
+                             <Select 
+                               value={request.status} 
+                               onValueChange={(val) => updateHelpRequestStatus(request.id, val as any)}
+                             >
+                               <SelectTrigger className={cn(
+                                 "h-10 w-32 rounded-full font-bold text-[10px] uppercase tracking-widest border-2",
+                                 request.status === 'Resolved' ? "border-green-500/20 text-green-600 bg-green-50" : "border-yellow-500/20 text-yellow-600 bg-yellow-50"
+                               )}>
+                                 <SelectValue />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 <SelectItem value="Pending">Pending</SelectItem>
+                                 <SelectItem value="Resolved">Resolved</SelectItem>
+                               </SelectContent>
+                             </Select>
+                          </TableCell>
+                          <TableCell className="pr-10 text-right">
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               className="h-12 w-12 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all"
+                               onClick={() => {
+                                 if (confirm("Delete Request: Are you sure you want to remove this enquiry?")) {
+                                   removeHelpRequest(request.id);
+                                   toast({ title: "Inquiry Removed", description: "The ticket has been deleted from history." });
+                                 }
+                               }}
+                             >
+                               <Trash2 className="h-5 w-5" />
+                             </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
         </main>

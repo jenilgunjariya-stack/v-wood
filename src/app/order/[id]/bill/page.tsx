@@ -9,16 +9,24 @@ import { Printer, ArrowLeft, Download, ShoppingBag, CreditCard, Banknote, Wallet
 import Link from "next/link";
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
 
 export default function OrderBillPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { orders, storeSettings } = useStore();
+  const { orders, storeSettings, userName, isAdmin } = useStore();
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
     const found = orders.find(o => o.id === id);
-    if (found) setOrder(found);
-  }, [orders, id]);
+    if (found) {
+      // Security Check: Only allow owner or admin to see the bill
+      if (found.userName === userName || isAdmin) {
+        setOrder(found);
+      } else {
+        setOrder(null);
+      }
+    }
+  }, [orders, id, userName, isAdmin]);
 
   const handlePrint = () => {
     window.print();
@@ -148,8 +156,8 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
             </div>
 
             {/* Table */}
-            <div className="mb-12 overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="mb-12 overflow-x-auto rounded-xl border border-primary/5">
+              <table className="w-full text-left min-w-[600px]">
                 <thead>
                   <tr className="border-b-2 border-primary/10 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                     <th className="py-4 px-2">Description</th>
@@ -173,8 +181,8 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
                         </div>
                       </td>
                       <td className="py-6 px-2 text-center font-medium">{item.quantity}</td>
-                      <td className="py-6 px-2 text-right font-medium">Rs. {item.price.toLocaleString('en-IN')}/-</td>
-                      <td className="py-6 px-2 text-right font-bold text-primary">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}/-</td>
+                                            <td className="py-6 px-2 text-right font-medium">RS. {item.price.toLocaleString('en-IN')}/-</td>
+                                            <td className="py-6 px-2 text-right font-bold text-primary">RS. {(item.price * item.quantity).toLocaleString('en-IN')}/-</td>
                     </tr>
                   ))}
                 </tbody>
@@ -186,15 +194,15 @@ export default function OrderBillPage({ params }: { params: Promise<{ id: string
               <div className="w-full md:w-80 space-y-4">
                 <div className="flex justify-between text-muted-foreground">
                   <span>Subtotal</span>
-                  <span className="font-medium">Rs. {subtotal.toLocaleString('en-IN')}/-</span>
+                                     <span className="font-medium">RS. {subtotal.toLocaleString('en-IN')}/-</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
                   <span>Shipping & Handling</span>
-                  <span className="font-medium">{shipping === 0 ? "FREE" : `Rs. ${shipping.toLocaleString('en-IN')}/-`}</span>
+                                     <span className="font-medium">{shipping === 0 ? "FREE" : `RS. ${shipping.toLocaleString('en-IN')}/-`}</span>
                 </div>
                 <div className="pt-4 border-t-2 border-primary/10 flex justify-between items-center">
                   <span className="text-lg font-headline font-bold text-primary">Total Paid</span>
-                  <span className="text-2xl font-bold text-accent">Rs. {order.total.toLocaleString('en-IN')}/-</span>
+                                     <span className="text-2xl font-bold text-accent">RS. {order.total.toLocaleString('en-IN')}/-</span>
                 </div>
               </div>
             </div>

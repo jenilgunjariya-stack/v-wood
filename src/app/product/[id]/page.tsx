@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 
 export default function ProductDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { products, addToCart, userName, getAverageRating, getProductRatings } = useStore();
+  const { products, addToCart, userName, userPhoto, addRating, getAverageRating, getProductRatings, getUserRating } = useStore();
   const router = useRouter();
   const clock = products.find(p => p.id === id);
   const avgRating = clock ? getAverageRating(clock.id) : 0;
@@ -22,6 +22,9 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [productUrl, setProductUrl] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [guestName, setGuestName] = useState("");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -74,6 +77,37 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
     } catch {
       toast({ variant: "destructive", title: "Copy Failed", description: "Could not copy the link." });
     }
+  };
+
+  const reviews = getProductRatings(clock.id);
+  const hasUserRated = getUserRating(clock.id);
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!reviewText.trim()) {
+      toast({ variant: "destructive", title: "Review Required", description: "Please write a brief review of your experience." });
+      return;
+    }
+
+    const name = userName !== "Guest" ? userName : (guestName.trim() || "Guest Collector");
+
+    addRating({
+      productId: clock.id,
+      rating: reviewRating,
+      comment: reviewText,
+      userName: name,
+      userPhoto: userName !== "Guest" ? userPhoto : undefined
+    });
+
+    toast({
+      title: "Review Submitted",
+      description: "Thank you for sharing your feedback with our collection studio.",
+    });
+
+    setReviewText("");
+    setReviewRating(5);
+    setGuestName("");
   };
 
   return (
@@ -146,7 +180,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
                   <span className="text-sm text-muted-foreground ml-1">({totalRatings} reviews)</span>
                 </div>
               </div>
-              <p className="text-2xl font-bold text-accent">Rs. {clock.price.toLocaleString('en-IN')}/-</p>
+                            <p className="text-2xl font-bold text-accent">RS. {clock.price.toLocaleString('en-IN')}/-</p>
             </div>
 
             <div className="prose prose-blue mb-8">
@@ -231,6 +265,152 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-24 space-y-16 border-t pt-24">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+            <div className="space-y-4">
+              <h2 className="text-4xl font-headline font-bold text-primary">Collector Reviews</h2>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className={require('@/lib/utils').cn("h-6 w-6", s <= Math.round(avgRating) ? "fill-accent text-accent" : "text-muted-foreground/20")} />
+                    ))}
+                  </div>
+                  <span className="text-2xl font-bold text-primary">{avgRating}</span>
+                </div>
+                <div className="h-8 w-px bg-muted" />
+                <p className="text-muted-foreground font-medium">{totalRatings} Verified Appraisals</p>
+              </div>
+            </div>
+            
+            {!hasUserRated && (
+              <Button 
+                onClick={() => document.getElementById('review-form')?.scrollIntoView({ behavior: 'smooth' })}
+                variant="outline"
+                className="rounded-full h-12 px-8 font-bold border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                Write an Appraisal
+              </Button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+            <div className="lg:col-span-2 space-y-8">
+              {reviews.length === 0 ? (
+                <div className="p-16 rounded-[3rem] bg-muted/20 border-2 border-dashed flex flex-col items-center text-center space-y-4">
+                  <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center">
+                    <Star className="h-8 w-8 text-muted-foreground/40" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-primary">No Appraisals Yet</h3>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-2">Be the first collector to provide feedback on this artisanal timepiece.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="p-8 md:p-10 rounded-[2.5rem] bg-white border border-primary/5 shadow-sm space-y-6 hover:shadow-xl transition-all">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-xl bg-primary/5 flex items-center justify-center overflow-hidden border">
+                            {review.userPhoto ? (
+                              <img src={review.userPhoto} alt={review.userName} className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="text-lg font-black text-primary capitalize">{review.userName[0]}</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-bold text-primary">{review.userName}</p>
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest leading-none mt-1">{review.date}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-0.5 bg-accent/10 px-3 py-1.5 rounded-full">
+                          <Star className="h-3 w-3 fill-accent text-accent" />
+                          <span className="text-xs font-black text-accent ml-1">{review.rating}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <p className="text-muted-foreground leading-relaxed italic">
+                          "{review.comment}"
+                        </p>
+                        <div className="flex items-center gap-2">
+                           <CheckCircle2 className="h-4 w-4 text-green-500" />
+                           <span className="text-[10px] font-bold text-green-600 uppercase tracking-widest">Verified Collector</span>
+                        </div>
+                      </div>
+                    </div>
+                  )).reverse()}
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-1">
+              <div id="review-form" className="sticky top-24 p-8 rounded-[2.5rem] bg-primary text-primary-foreground shadow-2xl space-y-8 overflow-hidden relative group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/[0.03] rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+                
+                <div className="space-y-2 relative z-10">
+                  <h3 className="text-2xl font-headline font-bold text-accent">Submit Appraisal</h3>
+                  <p className="text-xs text-white/50 leading-relaxed">Share your experience with this V-WOOD piece to help other collectors.</p>
+                </div>
+
+                <form onSubmit={handleSubmitReview} className="space-y-6 relative z-10">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-accent/80">Select Rating</label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReviewRating(star)}
+                          className="focus:outline-none transition-transform hover:scale-125 active:scale-95"
+                        >
+                          <Star className={require('@/lib/utils').cn("h-8 w-8", star <= reviewRating ? "fill-accent text-accent shadow-glow" : "text-white/20")} />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {userName === "Guest" && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-widest text-accent/80">Your Name</label>
+                      <input 
+                        value={guestName}
+                        onChange={(e) => setGuestName(e.target.value)}
+                        placeholder="e.g. John Doe"
+                        className="w-full h-12 bg-white/10 border-white/20 rounded-xl px-4 text-sm font-medium focus:border-accent focus:bg-white/20 transition-all outline-none text-white placeholder:text-white/30"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-accent/80">Detailed Experience</label>
+                    <textarea 
+                      value={reviewText}
+                      onChange={(e) => setReviewText(e.target.value)}
+                      placeholder="What makes this piece unique? Mention material quality, movement silence, or overall aesthetic."
+                      className="w-full min-h-[140px] bg-white/10 border-white/20 rounded-[1.5rem] p-5 text-sm font-medium focus:border-accent focus:bg-white/20 transition-all outline-none text-white placeholder:text-white/30 resize-none"
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit"
+                    className="w-full h-16 bg-accent text-accent-foreground font-black text-lg rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    Post Appraisal
+                  </Button>
+
+                  <div className="pt-2 flex items-center justify-center gap-3 opacity-30">
+                     <ShieldCheck className="h-4 w-4" />
+                     <span className="text-[8px] font-black uppercase tracking-widest">Secured Review Terminal</span>
+                  </div>
+                </form>
               </div>
             </div>
           </div>
@@ -326,7 +506,7 @@ export default function ProductDetail({ params }: { params: Promise<{ id: string
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-primary text-sm truncate">{clock.name}</p>
-                <p className="text-[10px] text-accent font-bold uppercase tracking-widest">Rs. {clock.price.toLocaleString('en-IN')}</p>
+                                <p className="text-[10px] text-accent font-bold uppercase tracking-widest">RS. {clock.price.toLocaleString('en-IN')}/-</p>
               </div>
             </div>
           </div>
