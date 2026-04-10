@@ -307,8 +307,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       fetchServerStore('tasks'),
       fetchServerStore('logs'),
       fetchServerStore('ratings'),
-      fetchServerStore('help')
-    ]).then(([serverProducts, sOrders, sSettings, sEmployees, sTasks, sLogs, sRatings, sHelp]) => {
+      fetchServerStore('help'),
+      fetchServerStore('profiles')
+    ]).then(([serverProducts, sOrders, sSettings, sEmployees, sTasks, sLogs, sRatings, sHelp, sProfiles]) => {
       if (serverProducts && serverProducts.length > 0) {
         setProducts(serverProducts);
         localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
@@ -317,19 +318,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (savedProducts) { try { setProducts(JSON.parse(savedProducts)); } catch (e) { } }
       }
 
-      if (sOrders) { setOrders(sOrders); localStorage.setItem('timely_finds_orders', JSON.stringify(sOrders)); }
+      const handleGlobalSync = (serverData: any, localKey: string, setStateFn: any, defaultFallback?: any) => {
+        if (serverData) {
+          setStateFn(serverData);
+          localStorage.setItem(localKey, JSON.stringify(serverData));
+        } else {
+          const localStr = localStorage.getItem(localKey);
+          if (localStr) {
+            try { 
+              const p = JSON.parse(localStr); 
+              setStateFn(p); 
+              saveServerStore(localKey.replace('timely_finds_', ''), p); 
+            } catch(e){}
+          } else if (defaultFallback) {
+             setStateFn(defaultFallback);
+             saveServerStore(localKey.replace('timely_finds_', ''), defaultFallback); 
+          }
+        }
+      };
+
+      handleGlobalSync(sOrders, 'timely_finds_orders', setOrders);
+      
       if (sSettings) { 
         if (sSettings.locationUrl === "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac") {
           sSettings.locationUrl = "https://maps.app.goo.gl/p1XQ5AaNtbfgfFbn9?g_st=ac";
         }
         setStoreSettingsState(sSettings); 
         localStorage.setItem('timely_finds_settings', JSON.stringify(sSettings)); 
+      } else {
+        const localStr = localStorage.getItem('timely_finds_settings');
+        if (localStr) {
+          try { 
+            const p = JSON.parse(localStr); 
+            if (p.locationUrl === "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac") p.locationUrl = "https://maps.app.goo.gl/p1XQ5AaNtbfgfFbn9?g_st=ac";
+            setStoreSettingsState(p); 
+            saveServerStore('settings', p); 
+          } catch(e){}
+        }
       }
-      if (sEmployees) { setEmployees(sEmployees); localStorage.setItem('timely_finds_employees', JSON.stringify(sEmployees)); }
-      if (sTasks) { setTasks(sTasks); localStorage.setItem('timely_finds_tasks', JSON.stringify(sTasks)); }
-      if (sLogs) { setLogisticsLogs(sLogs); localStorage.setItem('timely_finds_logs', JSON.stringify(sLogs)); }
-      if (sRatings) { setRatings(sRatings); localStorage.setItem('timely_finds_ratings', JSON.stringify(sRatings)); }
-      if (sHelp) { setHelpRequests(sHelp); localStorage.setItem('timely_finds_help', JSON.stringify(sHelp)); }
+
+      handleGlobalSync(sEmployees, 'timely_finds_employees', setEmployees);
+      handleGlobalSync(sTasks, 'timely_finds_tasks', setTasks);
+      handleGlobalSync(sLogs, 'timely_finds_logs', setLogisticsLogs);
+      handleGlobalSync(sRatings, 'timely_finds_ratings', setRatings);
+      handleGlobalSync(sHelp, 'timely_finds_help', setHelpRequests);
+
+      if (sProfiles) {
+        localStorage.setItem('timely_finds_user_profiles', JSON.stringify(sProfiles));
+      } else {
+        const localStr = localStorage.getItem('timely_finds_user_profiles');
+        if (localStr) {
+           saveServerStore('profiles', JSON.parse(localStr));
+        }
+      }
 
       setIsHydrated(true);
     });
@@ -573,9 +614,24 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_favorites', JSON.stringify(newFavorites));
   };
 
+  /** Save active user profile to server + localStorage immediately (called on every profile field change) */
+  const persistUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
+    const key = email || name;
+    if (!key || key === 'Guest') return;
+    try {
+      const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
+      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
+        profilesRaw ? JSON.parse(profilesRaw) : {};
+      profiles[key] = { displayName: name, email, photo, address, bankName };
+      localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
+      saveServerStore('profiles', profiles);
+    } catch (e) { }
+  };
+
   const setUserName = (name: string) => {
     setUserNameState(name);
     localStorage.setItem('timely_finds_user_name', name);
+    persistUserProfile(name, userEmail, userPhoto, userAddress, userBankName);
   };
 
   const setUserEmail = (email: string) => {
@@ -586,16 +642,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUserPhoto = (photo: string) => {
     setUserPhotoState(photo);
     localStorage.setItem('timely_finds_user_photo', photo);
+    persistUserProfile(userName, userEmail, photo, userAddress, userBankName);
   };
 
   const setUserAddress = (address: string) => {
     setUserAddressState(address);
     localStorage.setItem('timely_finds_user_address', address);
+    persistUserProfile(userName, userEmail, userPhoto, address, userBankName);
   };
 
   const setUserBankName = (bankName: string) => {
     setUserBankNameState(bankName);
     localStorage.setItem('timely_finds_user_bank', bankName);
+    persistUserProfile(userName, userEmail, userPhoto, userAddress, bankName);
   };
 
   const setStoreSettings = (settings: StoreSettings) => {
@@ -605,21 +664,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   const login = (email: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
-    // Email is the unique identity — userName stores the email as unique key
-    // Users can set a friendly display name from the profile page (setUserName)
     setIsAdminState(isAdminUser);
     setIsDeliveryState(isDeliveryUser);
     localStorage.setItem('timely_finds_is_admin', isAdminUser.toString());
     localStorage.setItem('timely_finds_is_delivery', isDeliveryUser.toString());
 
-    // Restore per-user profile data keyed by email
-    try {
-      const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
-      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
-        profilesRaw ? JSON.parse(profilesRaw) : {};
+    const applyProfile = (profiles: Record<string, any>) => {
       const saved = profiles[email];
       if (saved) {
-        // Returning user — restore their display name and profile data
         const displayName = saved.displayName || email;
         setUserNameState(displayName);
         setUserEmailState(email);
@@ -632,7 +684,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('timely_finds_user_address', saved.address || "");
         localStorage.setItem('timely_finds_user_bank', saved.bankName || "");
       } else {
-        // New user — use email as display name initially, clear other fields
         setUserNameState(email);
         setUserEmailState(email);
         setUserPhotoState("");
@@ -644,18 +695,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('timely_finds_user_address', "");
         localStorage.setItem('timely_finds_user_bank', "");
       }
-    } catch (e) {
-      // Fallback
-      setUserNameState(email);
-      setUserEmailState(email);
-      localStorage.setItem('timely_finds_user_name', email);
-      localStorage.setItem('timely_finds_user_email', email);
-    }
+    };
+
+    // Fetch profiles from server first (cross-device), fall back to localStorage
+    fetchServerStore('profiles').then((serverProfiles) => {
+      if (serverProfiles && serverProfiles[email]) {
+        // Server has this user's data — merge into localStorage too
+        const localRaw = localStorage.getItem('timely_finds_user_profiles');
+        const localProfiles = localRaw ? JSON.parse(localRaw) : {};
+        const merged = { ...localProfiles, ...serverProfiles };
+        localStorage.setItem('timely_finds_user_profiles', JSON.stringify(merged));
+        applyProfile(merged);
+      } else {
+        // Fall back to whatever is saved in localStorage
+        try {
+          const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
+          const profiles = profilesRaw ? JSON.parse(profilesRaw) : {};
+          applyProfile(profiles);
+        } catch (e) {
+          setUserNameState(email);
+          setUserEmailState(email);
+          localStorage.setItem('timely_finds_user_name', email);
+          localStorage.setItem('timely_finds_user_email', email);
+        }
+      }
+    });
   };
 
-  /** Persist current user's profile keyed by their EMAIL (identity key) before clearing session */
+  /** Persist current user's profile keyed by their EMAIL to server + localStorage */
   const saveCurrentUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
-    // Key profiles by email (the login identity), not display name
     const key = email || name;
     if (!key || key === 'Guest') return;
     try {
@@ -664,6 +732,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         profilesRaw ? JSON.parse(profilesRaw) : {};
       profiles[key] = { displayName: name, email, photo, address, bankName };
       localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
+      saveServerStore('profiles', profiles); // 🌐 push to server for cross-device access
     } catch (e) { }
   };
 

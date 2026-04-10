@@ -25,7 +25,7 @@
       "Battery Powered",
       "Quartz Movement"
     ],
-    "stock": 20,
+    "stock": 18,
     "shape": "Round",
     "id": "round-clock"
   },
@@ -46,7 +46,7 @@
   },
   {
     "name": "ORANGE SQUARE",
-    "price": 20,
+    "price": 299,
     "description": "",
     "style": "Modern",
     "category": "Alarm Clock",
@@ -130,7 +130,7 @@
       "Battery Powered",
       "Quartz Movement"
     ],
-    "stock": 20,
+    "stock": 18,
     "shape": "Round",
     "id": "round-clock"
   },

@@ -26,7 +26,7 @@ const UPI_APPS = [
 ];
 
 export default function CheckoutPage() {
-  const { cart, clearCart, addOrder, storeSettings, userBankName, userName } = useStore();
+  const { cart, clearCart, addOrder, storeSettings, userBankName, userName, userEmail } = useStore();
   const isLoggedIn = userName !== "Guest";
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -301,6 +301,7 @@ export default function CheckoutPage() {
       customerEmail: formData.email,
       paymentMethod: paymentMethod,
       userName: userName,
+      userEmail: userEmail,
       transactionId: transactionId,
       upiId: paymentMethod === 'UPI' ? formData.upiId : undefined,
       cardLast4: paymentMethod === 'Card' ? formData.cardNumber.replace(/\s/g, '').slice(-4) : undefined,

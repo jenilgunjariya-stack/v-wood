@@ -35,7 +35,7 @@ export default function ProfilePage() {
     setBankNameInput(userBankName);
   }, [userName, userEmail, userPhoto, userAddress, userBankName]);
 
-  const userOrders = orders.filter(o => o.userName === userName && userName !== "Guest");
+  const userOrders = orders.filter(o => o.userEmail === userEmail && userEmail !== "Guest");
   const lastOrder = userOrders.length > 0 ? userOrders[0] : null;
 
   const fetchLocation = () => {

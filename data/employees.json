@@ -1,0 +1,110 @@
+[
+  {
+    "id": "emp-1",
+    "name": "Rajesh Kumar",
+    "salary": 25000,
+    "role": "Master Wood Craftsman",
+    "paymentStatus": "Pending",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Present",
+      "2026-04-04": "Present",
+      "2026-04-05": "Present",
+      "2026-04-06": "Present",
+      "2026-04-08": "Present",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  },
+  {
+    "id": "emp-2",
+    "name": "Suresh Patel",
+    "salary": 18000,
+    "role": "Quality Inspector",
+    "paymentStatus": "Pending",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Present",
+      "2026-04-04": "Present",
+      "2026-04-05": "Present",
+      "2026-04-06": "Present",
+      "2026-04-08": "Present",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  },
+  {
+    "name": "Vijay Bhai sharma",
+    "salary": 15000,
+    "role": "colour work",
+    "paymentStatus": "Pending",
+    "id": "emp-1775060887362",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Present",
+      "2026-04-04": "Late",
+      "2026-04-05": "Present",
+      "2026-04-06": "Present",
+      "2026-04-08": "Absent",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  },
+  {
+    "name": "Vinod Bhai",
+    "salary": 14000,
+    "role": "Wooden work",
+    "paymentStatus": "Pending",
+    "id": "emp-1775060916597",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Present",
+      "2026-04-04": "Absent",
+      "2026-04-05": "Present",
+      "2026-04-06": "Present",
+      "2026-04-08": "Present",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  },
+  {
+    "name": "Vikram Bhai",
+    "salary": 30000,
+    "role": "Manager",
+    "paymentStatus": "Pending",
+    "id": "emp-1775060938820",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Present",
+      "2026-04-04": "Present",
+      "2026-04-05": "Present",
+      "2026-04-06": "Absent",
+      "2026-04-08": "Present",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  },
+  {
+    "name": "Mehul Bhai",
+    "salary": 13500,
+    "role": "Machinery work",
+    "paymentStatus": "Pending",
+    "id": "emp-1775060985988",
+    "attendance": {
+      "2026-04-01": "Present",
+      "2026-04-02": "Present",
+      "2026-04-03": "Absent",
+      "2026-04-04": "Present",
+      "2026-04-05": "Present",
+      "2026-04-06": "Present",
+      "2026-04-08": "Present",
+      "2026-04-09": "Present",
+      "2026-04-10": "Present"
+    }
+  }
+]

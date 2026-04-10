@@ -41,6 +41,7 @@ export interface Order {
   customerEmail?: string;
   paymentMethod: 'Card' | 'UPI' | 'COD' | 'In-Shop';
   userName?: string;
+  userEmail?: string;
   transactionId?: string;
   cardLast4?: string;
   cardHolderName?: string;

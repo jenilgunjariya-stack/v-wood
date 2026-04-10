@@ -11,7 +11,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 export default function OrdersPage() {
-  const { orders, cancelOrder, userName } = useStore();
+  const { orders, cancelOrder, userName, userEmail } = useStore();
   const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
 
   const toggleOrder = (orderId: string) => {
@@ -54,7 +54,7 @@ export default function OrdersPage() {
     );
   }
 
-  const userOrders = orders.filter(o => o.userName === userName);
+  const userOrders = orders.filter(o => o.userEmail === userEmail);
   const sortedOrders = [...userOrders].reverse(); // Show newest first
 
   if (userOrders.length === 0) {
