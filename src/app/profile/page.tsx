@@ -121,7 +121,7 @@ export default function ProfilePage() {
       return;
     }
     setUserName(nameInput);
-    setUserEmail(emailInput);
+    // Email is the login identity — not editable from profile
     setUserPhoto(photoInput);
     setUserAddress(addressInput);
     setUserBankName(bankNameInput);
@@ -263,20 +263,27 @@ export default function ProfilePage() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Email Address
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                          Email Address
+                        </Label>
+                        <span className="text-[9px] font-bold text-accent uppercase tracking-widest flex items-center gap-1 bg-accent/10 px-2 py-0.5 rounded-full">
+                          <ShieldCheck className="h-3 w-3" /> Login Identity
+                        </span>
+                      </div>
                       <div className="relative group">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                         <Input
                           id="email"
                           type="email"
                           value={emailInput}
-                          onChange={(e) => setEmailInput(e.target.value)}
-                          placeholder="yourname@example.com"
-                          className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
+                          readOnly
+                          className="pl-12 h-14 text-lg rounded-xl border-2 bg-muted/30 text-muted-foreground cursor-not-allowed select-all"
                         />
                       </div>
+                      <p className="text-[10px] text-muted-foreground ml-1">
+                        This is your login email and cannot be changed here.
+                      </p>
                     </div>
                   </div>
 

@@ -257,7 +257,7 @@ export default function AdminPage() {
       stock: newClock.stock || 0
     } as ClockType;
 
-    updateProducts([...products, clock]);
+    updateProducts([clock, ...products]);
     setIsAddOpen(false);
     setNewClock({ name: "", price: 0, description: "", style: "Modern", category: "Wall Clock", imageUrl: "", specifications: ["Battery Powered", "Quartz Movement"], stock: 0 });
     toast({ title: "Product Added", description: "New timepiece successfully listed." });

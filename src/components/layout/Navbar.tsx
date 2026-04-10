@@ -49,12 +49,14 @@ import {
 } from "@/components/ui/accordion";
 
 export function Navbar() {
-  const { cart, favorites, userName, userPhoto, isAdmin, isDelivery, searchQuery, setSearchQuery, storeSettings, logout } = useStore();
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { cart, favorites, userName, userPhoto, isAdmin, isDelivery, storeSettings, logout } = useStore();
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const favCount = favorites.length;
   const router = useRouter();
+
+  // Smart display label: if userName is an email, show the part before @
+  const displayLabel = userName.includes('@') ? userName.split('@')[0] : userName;
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -167,45 +169,7 @@ export function Navbar() {
             {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
 
-          {!isDelivery && (
-            <div className={cn(
-              "flex items-center transition-all duration-500",
-              isSearchOpen ? "w-48 sm:w-72" : "w-12"
-            )}>
-              {isSearchOpen ? (
-                <div className="relative w-full">
-                  <Input
-                    autoFocus
-                    placeholder="Find a timepiece..."
-                    className="h-12 pr-12 rounded-full border-none bg-muted/50 focus:bg-white focus:ring-accent shadow-inner text-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onBlur={() => !searchQuery && setIsSearchOpen(false)}
-                  />
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute right-1 top-1 h-10 w-10 rounded-full hover:bg-transparent"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setIsSearchOpen(false);
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="rounded-full h-12 w-12 hover:bg-accent/10"
-                  onClick={() => setIsSearchOpen(true)}
-                >
-                  <Search className="h-5 w-5" />
-                </Button>
-              )}
-            </div>
-          )}
+
 
           <div className="h-8 w-px bg-primary/10 hidden sm:block mx-2" />
 
@@ -222,10 +186,10 @@ export function Navbar() {
                   <Avatar className="h-9 w-9 border-2 border-white/50 group-hover:scale-105 transition-transform">
                     <AvatarImage src={userPhoto} alt={userName} />
                     <AvatarFallback className="bg-accent text-accent-foreground font-headline">
-                      {userName[0]}
+                      {displayLabel[0]?.toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-[11px] uppercase tracking-widest truncate max-w-[100px]">{userName}</span>
+                  <span className="text-[11px] uppercase tracking-widest truncate max-w-[100px]">{displayLabel}</span>
                 </Button>
               </Link>
               <Button 
@@ -336,6 +300,11 @@ export function Navbar() {
                           About The Studio
                         </Link>
 
+                        <Link href="/help" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
+                          <HelpCircle className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
+                          Help Centre
+                        </Link>
+
                         {userName !== "Guest" && (
                           <Link href="/orders" className="flex items-center gap-4 p-5 rounded-2xl hover:bg-accent/10 transition-all font-bold text-sm text-primary group">
                             <Package className="h-5 w-5 text-accent group-hover:scale-110 transition-transform" />
@@ -386,10 +355,10 @@ export function Navbar() {
                       <Link href="/profile" className="flex items-center gap-4 p-4 rounded-2xl bg-white border-2 border-accent/10 shadow-sm group">
                         <Avatar className="h-12 w-12 border-2 border-white shadow-md transition-transform group-hover:scale-105">
                           <AvatarImage src={userPhoto} alt={userName} />
-                          <AvatarFallback className="bg-accent text-accent-foreground">{userName[0]}</AvatarFallback>
+                          <AvatarFallback className="bg-accent text-accent-foreground">{displayLabel[0]?.toUpperCase()}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-bold text-primary truncate">{userName}</span>
+                          <span className="text-sm font-bold text-primary truncate">{displayLabel}</span>
                           <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Collector Profile</span>
                         </div>
                       </Link>

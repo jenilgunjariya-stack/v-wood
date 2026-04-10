@@ -80,22 +80,22 @@ export function ClockCard({ clock }: { clock: Clock }) {
       </div>
 
       <Link href={`/product/${clock.id}`} className={isOutOfStock ? "pointer-events-none" : ""}>
-        <div className="relative aspect-square bg-black overflow-hidden flex items-center justify-center p-8 border-[8px] border-primary shadow-2xl transition-all duration-500 group-hover:scale-[0.98] group-hover:border-accent">
+        <div className="relative aspect-square bg-black overflow-hidden flex items-center justify-center p-4 sm:p-8 border-[4px] sm:border-[8px] border-primary shadow-2xl transition-all duration-500 group-hover:scale-[0.98] group-hover:border-accent">
           <img
             src={clock.imageUrl}
             alt={clock.name}
             className={`w-full h-full object-contain transition-transform duration-700 ${isOutOfStock ? 'grayscale opacity-30 shadow-none' : 'group-hover:scale-110 drop-shadow-[0_20px_40px_rgba(255,255,255,0.05)]'}`}
           />
           <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-          <div className="absolute top-6 left-6">
-            <span className="bg-primary/90 text-white px-4 py-1.5 text-[9px] font-bold uppercase tracking-[0.3em] rounded-full backdrop-blur-md shadow-2xl border border-white/10">
+          <div className="absolute top-3 left-3 sm:top-6 sm:left-6 md:top-4 md:left-4">
+            <span className="bg-primary/90 text-white px-2 sm:px-4 py-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.2em] sm:tracking-[0.3em] rounded-full backdrop-blur-md shadow-2xl border border-white/10">
               {clock.style}
             </span>
           </div>
         </div>
-        <CardContent className="p-8">
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="font-headline text-2xl font-bold text-primary line-clamp-1">{clock.name}</h3>
+        <CardContent className="p-4 sm:p-8">
+          <div className="flex flex-col xl:flex-row xl:justify-between items-start mb-2 gap-2">
+            <h3 className="font-headline text-base sm:text-2xl font-bold text-primary line-clamp-1">{clock.name}</h3>
             <div className="flex items-center gap-1 bg-accent/10 px-2 py-1 rounded-lg">
               <Star className="h-3 w-3 fill-accent text-accent" />
               <span className="text-[10px] font-bold text-accent">{avgRating || "0.0"}</span>
@@ -145,27 +145,27 @@ export function ClockCard({ clock }: { clock: Clock }) {
               <span className="text-[10px] text-muted-foreground ml-2">({totalRatings})</span>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[48px] mb-4">
+          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 leading-relaxed min-h-[36px] sm:min-h-[48px] mb-2 sm:mb-4">
             {clock.description}
           </p>
 
         </CardContent>
       </Link>
-      <CardFooter className="p-8 pt-0 flex items-center justify-between">
+      <CardFooter className="p-4 sm:p-8 pt-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-col">
           {hasDiscount ? (
             <>
-              <span className="text-2xl font-bold text-accent">RS. {discountPrice.toLocaleString('en-IN')}/-</span>
-              <span className="text-xs font-bold text-muted-foreground/50 line-through">RS. {clock.price.toLocaleString('en-IN')}/-</span>
+              <span className="text-base sm:text-2xl font-bold text-accent">RS. {discountPrice.toLocaleString('en-IN')}/-</span>
+              <span className="text-[10px] sm:text-xs font-bold text-muted-foreground/50 line-through">RS. {clock.price.toLocaleString('en-IN')}/-</span>
             </>
           ) : (
-            <span className="text-2xl font-bold text-primary">RS. {clock.price.toLocaleString('en-IN')}/-</span>
+            <span className="text-base sm:text-2xl font-bold text-primary">RS. {clock.price.toLocaleString('en-IN')}/-</span>
           )}
         </div>
         <Button 
-          size="lg" 
+          size="icon" 
           variant={isOutOfStock ? "outline" : "secondary"} 
-          className="rounded-2xl h-14 w-14 p-0 shadow-lg transition-all hover:scale-110 active:scale-90"
+          className="rounded-xl sm:rounded-2xl h-10 w-10 sm:h-14 sm:w-14 shrink-0 shadow-lg transition-all hover:scale-110 active:scale-90 self-end sm:self-auto"
           onClick={handleAddToCart}
           disabled={isOutOfStock}
         >

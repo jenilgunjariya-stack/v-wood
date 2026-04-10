@@ -57,10 +57,10 @@ export default function AboutPage() {
           <div className="relative z-10 flex flex-col md:flex-row justify-center items-center gap-8">
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-widest text-accent mb-1 text-center md:text-left">Visit Showroom</p>
-              <div className="flex items-center justify-center md:justify-start gap-2">
-                <MapPin className="h-4 w-4 text-accent" />
+              <a href={storeSettings.locationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center md:justify-start gap-2 hover:text-accent transition-colors group">
+                <MapPin className="h-4 w-4 text-accent group-hover:scale-110 transition-transform" />
                 <p className="text-sm lowercase font-medium">{storeSettings.address}</p>
-              </div>
+              </a>
             </div>
             <div className="h-px w-20 bg-white/10 md:h-12 md:w-px" />
             <div className="space-y-2">

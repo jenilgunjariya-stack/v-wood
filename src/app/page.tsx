@@ -27,7 +27,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const inStockProducts = products.filter(p => p.stock > 0);
+  const inStockProducts = products; // Show all products, even if out of stock
   const filteredProducts = inStockProducts.filter(clock => {
     const matchesSearch = clock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          clock.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -246,7 +246,7 @@ export default function Home() {
                           View All {cat}s <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-10">
                         {catProducts.map((clock) => (
                           <ClockCard key={clock.id} clock={clock} />
                         ))}
@@ -268,7 +268,7 @@ export default function Home() {
                         </div>
                         <div className="h-px flex-1 bg-primary/10" />
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-10">
                         {others.map((clock) => (
                           <ClockCard key={clock.id} clock={clock} />
                         ))}
@@ -278,7 +278,7 @@ export default function Home() {
                 })()}
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-10">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-10">
                 {filteredProducts.map((clock) => (
                   <ClockCard key={clock.id} clock={clock} />
                 ))}
@@ -434,9 +434,11 @@ export default function Home() {
                     {storeSettings.phone}
                   </a>
                 </li>
-                <li className="flex gap-4 text-muted-foreground">
-                  <MapPin className="h-5 w-5 shrink-0 text-accent" />
-                  <span className="font-medium lowercase leading-relaxed">{storeSettings.address}</span>
+                <li className="flex gap-4 text-muted-foreground group">
+                  <MapPin className="h-5 w-5 shrink-0 text-accent group-hover:scale-110 transition-transform" />
+                  <a href={storeSettings.locationUrl} target="_blank" rel="noopener noreferrer" className="font-medium lowercase leading-relaxed hover:text-accent transition-colors">
+                    {storeSettings.address}
+                  </a>
                 </li>
               </ul>
             </div>

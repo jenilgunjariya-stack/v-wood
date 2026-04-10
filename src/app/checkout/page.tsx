@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CheckCircle, Truck, CreditCard, ShieldCheck, Wallet, Banknote, Smartphone, AlertCircle, QrCode, ExternalLink, Info, Loader2, ArrowRight, ShieldAlert, Clock, MapPin } from "lucide-react";
+import { CheckCircle, Truck, CreditCard, ShieldCheck, Wallet, Banknote, Smartphone, AlertCircle, QrCode, ExternalLink, Info, Loader2, ArrowRight, ShieldAlert, Clock, MapPin, Lock, LogIn } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { Order } from "@/app/lib/types";
@@ -27,6 +27,7 @@ const UPI_APPS = [
 
 export default function CheckoutPage() {
   const { cart, clearCart, addOrder, storeSettings, userBankName, userName } = useStore();
+  const isLoggedIn = userName !== "Guest";
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'requesting' | 'request_processing' | 'awaiting_bank' | 'verifying' | 'admin_verification' | 'success'>('idle');
@@ -321,6 +322,66 @@ export default function CheckoutPage() {
   }
 
   if (!mounted) return null;
+
+  // Hard guard: block checkout for guests
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="w-full max-w-md animate-in fade-in zoom-in duration-700">
+            <div className="bg-white rounded-[3rem] border-none shadow-[0_40px_80px_-15px_rgba(0,0,0,0.2)] overflow-hidden ring-1 ring-black/5">
+              {/* Header */}
+              <div className="bg-primary p-10 text-center relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&q=80&w=800')] bg-cover bg-center opacity-5" />
+                <div className="relative z-10 space-y-4">
+                  <div className="w-20 h-20 rounded-full bg-accent/20 border-4 border-accent/30 flex items-center justify-center mx-auto shadow-xl">
+                    <Lock className="h-10 w-10 text-accent" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-headline font-bold text-white tracking-tight">Sign In Required</h1>
+                    <p className="text-primary-foreground/60 mt-2 text-sm">You need an account to place an order.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="p-10 space-y-6">
+                <div className="space-y-4">
+                  {[
+                    { icon: ShieldCheck, text: "Secure order tracking under your account" },
+                    { icon: Truck, text: "Saved shipping address for faster checkout" },
+                    { icon: ShieldAlert, text: "Order history visible only to you" },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl">
+                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center shrink-0">
+                        <item.icon className="h-5 w-5 text-accent" />
+                      </div>
+                      <p className="text-sm font-medium text-primary">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <Link href="/login?redirect=/checkout">
+                  <Button className="w-full h-14 text-lg font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-2xl shadow-xl shadow-accent/20 transition-all active:scale-[0.98] mt-2">
+                    <LogIn className="mr-3 h-5 w-5" />
+                    Sign In to Continue
+                    <ArrowRight className="ml-3 h-5 w-5" />
+                  </Button>
+                </Link>
+
+                <div className="text-center">
+                  <Link href="/cart" className="text-sm font-bold text-muted-foreground hover:text-accent transition-colors uppercase tracking-widest text-[10px]">
+                    ← Back to Cart
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   if (step === 3) {
     const orderId = `VWD-${Math.floor(100000 + Math.random() * 900000)}`;

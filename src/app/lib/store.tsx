@@ -92,7 +92,7 @@ const INITIAL_SETTINGS: StoreSettings = {
   heroImageUrl: "https://i.imgur.com/6vIzIjy.jpeg",
   ownerName: "Jenil Nileshbhai Gunjariya",
   paymentQrCodeUrl: "https://picsum.photos/seed/qr-code/400/400",
-  locationUrl: "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac",
+  locationUrl: "https://maps.app.goo.gl/p1XQ5AaNtbfgfFbn9?g_st=ac",
   upiId: "jenilgunjariya@oksbi",
   bankName: "State Bank of India",
   accountNumber: "392740835201"
@@ -158,6 +158,51 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
+// Sync products with server (API route writes to data/products.json)
+async function fetchProductsFromServer(): Promise<Clock[] | null> {
+  try {
+    const res = await fetch('/api/products', { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn('Could not fetch products from server:', e);
+  }
+  return null;
+}
+
+async function saveProductsToServer(products: Clock[]) {
+  try {
+    await fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(products)
+    });
+  } catch (e) {
+    console.warn('Could not save products to server:', e);
+  }
+}
+
+async function fetchServerStore(key: string) {
+  try {
+    const res = await fetch(`/api/store?key=${key}`, { cache: 'no-store' });
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn(`Could not fetch ${key} from server:`, e);
+  }
+  return null;
+}
+
+async function saveServerStore(key: string, data: any) {
+  try {
+    await fetch(`/api/store?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+  } catch (e) {
+    console.warn(`Could not save ${key} to server:`, e);
+  }
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Clock[]>(INITIAL_PRODUCTS);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -183,11 +228,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const savedCart = localStorage.getItem('timely_finds_cart');
     if (savedCart) {
       try { setCart(JSON.parse(savedCart)); } catch (e) { }
-    }
-
-    const savedProducts = localStorage.getItem('timely_finds_products');
-    if (savedProducts) {
-      try { setProducts(JSON.parse(savedProducts)); } catch (e) { }
     }
 
     const savedOrders = localStorage.getItem('timely_finds_orders');
@@ -223,7 +263,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const savedSettings = localStorage.getItem('timely_finds_settings');
     if (savedSettings) {
-      try { setStoreSettingsState(JSON.parse(savedSettings)); } catch (e) { }
+      try {
+        const parsed = JSON.parse(savedSettings);
+        if (parsed.locationUrl === "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac") {
+          parsed.locationUrl = "https://maps.app.goo.gl/p1XQ5AaNtbfgfFbn9?g_st=ac";
+          localStorage.setItem('timely_finds_settings', JSON.stringify(parsed));
+        }
+        setStoreSettingsState(parsed);
+      } catch (e) { }
     }
 
     const savedFavorites = localStorage.getItem('timely_finds_favorites');
@@ -251,9 +298,52 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try { setHelpRequests(JSON.parse(savedHelp)); } catch (e) { }
     }
 
-    setIsHydrated(true);
+    // 🌐 PRIORITY: Load products and global state from SERVER (shared across all browsers/devices)
+    Promise.all([
+      fetchProductsFromServer(),
+      fetchServerStore('orders'),
+      fetchServerStore('settings'),
+      fetchServerStore('employees'),
+      fetchServerStore('tasks'),
+      fetchServerStore('logs'),
+      fetchServerStore('ratings'),
+      fetchServerStore('help')
+    ]).then(([serverProducts, sOrders, sSettings, sEmployees, sTasks, sLogs, sRatings, sHelp]) => {
+      if (serverProducts && serverProducts.length > 0) {
+        setProducts(serverProducts);
+        localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
+      } else {
+        const savedProducts = localStorage.getItem('timely_finds_products');
+        if (savedProducts) { try { setProducts(JSON.parse(savedProducts)); } catch (e) { } }
+      }
 
-    // Sync state across multiple tabs instantly
+      if (sOrders) { setOrders(sOrders); localStorage.setItem('timely_finds_orders', JSON.stringify(sOrders)); }
+      if (sSettings) { 
+        if (sSettings.locationUrl === "https://maps.app.goo.gl/ZhmgVKeVN4otaHQS6?g_st=ac") {
+          sSettings.locationUrl = "https://maps.app.goo.gl/p1XQ5AaNtbfgfFbn9?g_st=ac";
+        }
+        setStoreSettingsState(sSettings); 
+        localStorage.setItem('timely_finds_settings', JSON.stringify(sSettings)); 
+      }
+      if (sEmployees) { setEmployees(sEmployees); localStorage.setItem('timely_finds_employees', JSON.stringify(sEmployees)); }
+      if (sTasks) { setTasks(sTasks); localStorage.setItem('timely_finds_tasks', JSON.stringify(sTasks)); }
+      if (sLogs) { setLogisticsLogs(sLogs); localStorage.setItem('timely_finds_logs', JSON.stringify(sLogs)); }
+      if (sRatings) { setRatings(sRatings); localStorage.setItem('timely_finds_ratings', JSON.stringify(sRatings)); }
+      if (sHelp) { setHelpRequests(sHelp); localStorage.setItem('timely_finds_help', JSON.stringify(sHelp)); }
+
+      setIsHydrated(true);
+    });
+
+    // Poll server for product updates every 30 seconds (cross-device real-time sync)
+    const pollInterval = setInterval(async () => {
+      const serverProducts = await fetchProductsFromServer();
+      if (serverProducts && serverProducts.length > 0) {
+        setProducts(serverProducts);
+        localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
+      }
+    }, 30000);
+
+    // Sync state across multiple tabs instantly (same browser)
     const handleStorageChange = (e: StorageEvent) => {
       if (!e.newValue) return;
 
@@ -277,7 +367,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
+    };
   }, []);
 
   const saveCart = (newCart: CartItem[]) => {
@@ -319,6 +412,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = [order, ...orders];
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+    saveServerStore('orders', newOrders);
 
     const updatedProducts = products.map(p => {
       const orderItem = order.items.find(item => item.id === p.id);
@@ -334,6 +428,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = orders.map(o => o.id === orderId ? { ...o, status } : o);
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+    saveServerStore('orders', newOrders);
 
     // Record activity for logistics monitoring
     const newLog: LogisticsLog = {
@@ -350,6 +445,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const updatedLogs = [newLog, ...logisticsLogs].slice(0, 500);
     setLogisticsLogs(updatedLogs);
     localStorage.setItem('timely_finds_logs', JSON.stringify(updatedLogs));
+    saveServerStore('logs', updatedLogs);
   };
 
   const cancelOrder = (orderId: string) => {
@@ -360,6 +456,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = orders.map(o => o.id === orderId ? { ...o, status: 'Cancelled' as const } : o);
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+    saveServerStore('orders', newOrders);
 
     // 2. Restore Stock
     const updatedProducts = products.map(p => {
@@ -378,6 +475,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateProducts = (newProducts: Clock[]) => {
     setProducts(newProducts);
     localStorage.setItem('timely_finds_products', JSON.stringify(newProducts));
+    // 🌐 Save to server so ALL users see the updated catalog
+    saveProductsToServer(newProducts);
   };
 
   const updateEmployeeStatus = (empId: string, status: Employee['paymentStatus']) => {
@@ -393,6 +492,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const payAllEmployees = () => {
@@ -408,24 +508,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const addEmployee = (emp: Employee) => {
     const newEmployees = [...employees, { ...emp, attendance: {} }];
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const updateEmployee = (emp: Employee) => {
     const newEmployees = employees.map(e => e.id === emp.id ? emp : e);
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const removeEmployee = (id: string) => {
     const newEmployees = employees.filter(e => e.id !== id);
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const resetPayroll = () => {
@@ -436,6 +540,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }));
     setEmployees(resetEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(resetEmployees));
+    saveServerStore('employees', resetEmployees);
   };
 
   const updateAttendance = (empId: string, date: string, status: any) => {
@@ -453,6 +558,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
     setEmployees(newEmployees);
     localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    saveServerStore('employees', newEmployees);
   };
 
   const toggleFavorite = (product: Clock) => {
@@ -495,54 +601,68 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setStoreSettings = (settings: StoreSettings) => {
     setStoreSettingsState(settings);
     localStorage.setItem('timely_finds_settings', JSON.stringify(settings));
+    saveServerStore('settings', settings);
   };
 
-  const login = (name: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
-    setUserNameState(name);
-    localStorage.setItem('timely_finds_user_name', name);
+  const login = (email: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
+    // Email is the unique identity — userName stores the email as unique key
+    // Users can set a friendly display name from the profile page (setUserName)
     setIsAdminState(isAdminUser);
     setIsDeliveryState(isDeliveryUser);
     localStorage.setItem('timely_finds_is_admin', isAdminUser.toString());
     localStorage.setItem('timely_finds_is_delivery', isDeliveryUser.toString());
 
-    // Restore per-user profile data if previously saved
+    // Restore per-user profile data keyed by email
     try {
       const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
-      const profiles: Record<string, { email: string; photo: string; address: string; bankName: string }> =
+      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
         profilesRaw ? JSON.parse(profilesRaw) : {};
-      const saved = profiles[name];
+      const saved = profiles[email];
       if (saved) {
-        setUserEmailState(saved.email || "");
+        // Returning user — restore their display name and profile data
+        const displayName = saved.displayName || email;
+        setUserNameState(displayName);
+        setUserEmailState(email);
         setUserPhotoState(saved.photo || "");
         setUserAddressState(saved.address || "");
         setUserBankNameState(saved.bankName || "");
-        // Also keep flat keys in sync for storage cross-tab
-        localStorage.setItem('timely_finds_user_email', saved.email || "");
+        localStorage.setItem('timely_finds_user_name', displayName);
+        localStorage.setItem('timely_finds_user_email', email);
         localStorage.setItem('timely_finds_user_photo', saved.photo || "");
         localStorage.setItem('timely_finds_user_address', saved.address || "");
         localStorage.setItem('timely_finds_user_bank', saved.bankName || "");
       } else {
-        // New user — clear any stale profile values from a previous session
-        setUserEmailState("");
+        // New user — use email as display name initially, clear other fields
+        setUserNameState(email);
+        setUserEmailState(email);
         setUserPhotoState("");
         setUserAddressState("");
         setUserBankNameState("");
-        localStorage.setItem('timely_finds_user_email', "");
+        localStorage.setItem('timely_finds_user_name', email);
+        localStorage.setItem('timely_finds_user_email', email);
         localStorage.setItem('timely_finds_user_photo', "");
         localStorage.setItem('timely_finds_user_address', "");
         localStorage.setItem('timely_finds_user_bank', "");
       }
-    } catch (e) { }
+    } catch (e) {
+      // Fallback
+      setUserNameState(email);
+      setUserEmailState(email);
+      localStorage.setItem('timely_finds_user_name', email);
+      localStorage.setItem('timely_finds_user_email', email);
+    }
   };
 
-  /** Persist current user's profile keyed by their name before clearing session */
+  /** Persist current user's profile keyed by their EMAIL (identity key) before clearing session */
   const saveCurrentUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
-    if (!name || name === 'Guest') return;
+    // Key profiles by email (the login identity), not display name
+    const key = email || name;
+    if (!key || key === 'Guest') return;
     try {
       const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
-      const profiles: Record<string, { email: string; photo: string; address: string; bankName: string }> =
+      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
         profilesRaw ? JSON.parse(profilesRaw) : {};
-      profiles[name] = { email, photo, address, bankName };
+      profiles[key] = { displayName: name, email, photo, address, bankName };
       localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
     } catch (e) { }
   };
@@ -584,6 +704,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newRatings = [...filteredRatings, newRating];
     setRatings(newRatings);
     localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
+    saveServerStore('ratings', newRatings);
   };
 
   const getAverageRating = (productId: string) => {
@@ -614,24 +735,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newTasks = [newTask, ...tasks];
     setTasks(newTasks);
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+    saveServerStore('tasks', newTasks);
   };
 
   const updateTaskStatus = (taskId: string, status: Task['status']) => {
     const newTasks = tasks.map(t => t.id === taskId ? { ...t, status } : t);
     setTasks(newTasks);
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+    saveServerStore('tasks', newTasks);
   };
 
   const updateTask = (task: Task) => {
     const newTasks = tasks.map(t => t.id === task.id ? task : t);
     setTasks(newTasks);
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+    saveServerStore('tasks', newTasks);
   };
 
   const removeTask = (taskId: string) => {
     const newTasks = tasks.filter(t => t.id !== taskId);
     setTasks(newTasks);
     localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+    saveServerStore('tasks', newTasks);
   };
 
   const addHelpRequest = (requestData: Omit<HelpRequest, 'id' | 'date' | 'status'>) => {
@@ -646,21 +771,31 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newRequests = [newRequest, ...helpRequests];
     setHelpRequests(newRequests);
     localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+    saveServerStore('help', newRequests);
   };
 
   const updateHelpRequestStatus = (id: string, status: HelpRequest['status']) => {
     const newRequests = helpRequests.map(h => h.id === id ? { ...h, status } : h);
     setHelpRequests(newRequests);
     localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+    saveServerStore('help', newRequests);
   };
 
   const removeHelpRequest = (id: string) => {
     const newRequests = helpRequests.filter(h => h.id !== id);
     setHelpRequests(newRequests);
     localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
+    saveServerStore('help', newRequests);
   };
 
-  if (!isHydrated) return null;
+  if (!isHydrated) return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Loading Catalog...</p>
+      </div>
+    </div>
+  );
 
   return (
     <StoreContext.Provider value={{

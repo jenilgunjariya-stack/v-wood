@@ -1,31 +1,47 @@
 
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useStore } from "@/app/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { LogIn, User, Lock, ArrowRight, ShieldCheck } from "lucide-react";
+import { LogIn, Mail, Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
 
-export default function LoginPage() {
-  const [name, setName] = useState("");
+function LoginContent() {
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login, storeSettings } = useStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name.trim()) {
+
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail) {
       toast({
         variant: "destructive",
-        title: "Name required",
-        description: "Please enter your name to continue.",
+        title: "Email required",
+        description: "Please enter your email address to continue.",
+      });
+      return;
+    }
+
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Email",
+        description: "Please enter a valid email address (e.g. john@example.com).",
       });
       return;
     }
@@ -34,26 +50,28 @@ export default function LoginPage() {
     const isAdmin = password === "261106";
     const isDelivery = password === "12345";
 
-    login(name, isAdmin, isDelivery);
-    
+    // Use email as the unique user identifier
+    login(trimmedEmail, isAdmin, isDelivery);
+
     if (isAdmin) {
       toast({
         title: "Admin Access Granted",
-        description: `Welcome back, ${name}. Dashboard access enabled.`,
+        description: `Welcome back. Dashboard access enabled.`,
       });
       router.push("/admin");
     } else if (isDelivery) {
       toast({
         title: "Logistics Access Granted",
-        description: `Welcome back, ${name}. Fulfillment dashboard ready.`,
+        description: `Welcome back. Fulfillment dashboard ready.`,
       });
       router.push("/delivery");
     } else {
       toast({
         title: "Welcome!",
-        description: `Successfully signed in as ${name}.`,
+        description: `Successfully signed in as ${trimmedEmail}.`,
       });
-      router.push("/");
+      // Redirect to original destination (e.g. /checkout) or home
+      router.push(redirectTo);
     }
   };
 
@@ -61,22 +79,21 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
-        <Image 
-          src="https://picsum.photos/seed/wood-texture-dark/1920/1080" 
-          alt="Background" 
-          fill 
+        <Image
+          src="https://picsum.photos/seed/wood-texture-dark/1920/1080"
+          alt="Background"
+          fill
           className="object-cover opacity-20 grayscale"
           data-ai-hint="dark wood"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/40 to-background" />
       </div>
 
-
       <main className="flex-1 flex items-center justify-center p-4 relative z-10">
         <div className="w-full max-w-md animate-in fade-in slide-in-from-bottom-8 duration-1000">
           <div className="flex flex-col items-center mb-10">
             <div className="relative h-24 w-60 mb-4 drop-shadow-2xl">
-              <img 
+              <img
                 src={storeSettings.logoUrl}
                 alt={storeSettings.name}
                 className="w-full h-full object-contain"
@@ -93,25 +110,29 @@ export default function LoginPage() {
                 Step into the world of artisanal time.
               </CardDescription>
             </CardHeader>
-            
+
             <CardContent className="p-10">
               <form onSubmit={handleLogin} className="space-y-8">
+                {/* Email Field */}
                 <div className="space-y-3">
-                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
-                    Your Name
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                    Email Address
                   </Label>
                   <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                    <Input 
-                      id="name" 
-                      placeholder="Full Name" 
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="yourname@example.com"
                       className="pl-12 h-14 rounded-2xl border-2 bg-white/50 focus:border-accent focus:bg-white transition-all text-lg shadow-sm"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      autoComplete="email"
                     />
                   </div>
                 </div>
 
+                {/* Password / PIN Field */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between ml-1">
                     <Label htmlFor="password" className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
@@ -124,19 +145,30 @@ export default function LoginPage() {
                   </div>
                   <div className="relative group">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      placeholder="••••" 
-                      className="pl-12 h-14 rounded-2xl border-2 bg-white/50 focus:border-accent focus:bg-white transition-all text-lg tracking-[0.5em] shadow-sm"
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Leave blank for customer access"
+                      className="pl-12 pr-12 h-14 rounded-2xl border-2 bg-white/50 focus:border-accent focus:bg-white transition-all text-lg shadow-sm"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="current-password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-accent transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground ml-1">
+                    Customers: leave PIN blank. Admins enter the studio PIN.
+                  </p>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-16 text-xl font-bold bg-accent hover:bg-accent/90 text-accent-foreground rounded-[1.25rem] group shadow-xl shadow-accent/20 transition-all active:scale-[0.98]"
                 >
                   Continue to Store
@@ -161,5 +193,13 @@ export default function LoginPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

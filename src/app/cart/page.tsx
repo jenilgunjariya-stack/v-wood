@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, userName } = useStore();
   const router = useRouter();
+  const isLoggedIn = userName !== "Guest";
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const shipping = 0; // Free shipping for all orders
   const total = subtotal + shipping;
@@ -134,11 +135,38 @@ export default function CartPage() {
               <Button
                 size="lg"
                 className="w-full h-14 bg-accent hover:bg-accent/90 text-accent-foreground font-bold"
-                onClick={() => router.push("/checkout")}
+                onClick={() => {
+                  if (!isLoggedIn) {
+                    toast({
+                      variant: "destructive",
+                      title: "Login Required",
+                      description: "Please sign in to your account before placing an order.",
+                    });
+                    router.push("/login?redirect=/checkout");
+                    return;
+                  }
+                  router.push("/checkout");
+                }}
               >
-                Proceed to Checkout
-                <ArrowRight className="ml-2 h-5 w-5" />
+                {isLoggedIn ? (
+                  <>
+                    Proceed to Checkout
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Sign In to Checkout
+                  </>
+                )}
               </Button>
+
+              {!isLoggedIn && (
+                <p className="text-center text-[11px] text-muted-foreground mt-3 flex items-center justify-center gap-1">
+                  <span className="text-accent font-bold">🔒</span>
+                  You must be signed in to place an order.
+                </p>
+              )}
               
               <p className="text-center text-[10px] text-muted-foreground mt-4">
                 Taxes calculated at checkout. Free shipping on all orders.
