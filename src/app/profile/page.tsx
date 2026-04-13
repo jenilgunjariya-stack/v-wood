@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User, Edit, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert, Heart, X, ArrowRight, Loader2 } from "lucide-react";
+import { User, Edit, Save, LogOut, Settings, ShieldCheck, ShoppingBag, Calendar, Package, Clock, Truck, CheckCircle2, PackageCheck, ChevronRight, CalendarCheck, FileText, Mail, MapPin, ImageIcon, Camera, Upload, Trash2, ShieldAlert, Heart, X, ArrowRight, Loader2, Phone } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,12 @@ import { cn } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function ProfilePage() {
-  const { userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, isDelivery, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, orders, favorites, storeSettings, logout, cancelOrder } = useStore();
+  const { userName, userEmail, userPhoto, userAddress, userPhone, userBankName, isAdmin, isDelivery, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserPhone, setUserBankName, orders, favorites, storeSettings, logout, cancelOrder } = useStore();
   const [nameInput, setNameInput] = useState(userName);
   const [emailInput, setEmailInput] = useState(userEmail);
   const [photoInput, setPhotoInput] = useState(userPhoto);
   const [addressInput, setAddressInput] = useState(userAddress);
+  const [phoneInput, setPhoneInput] = useState(userPhone);
   const [bankNameInput, setBankNameInput] = useState(userBankName);
   const [mounted, setMounted] = useState(false);
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -32,8 +33,9 @@ export default function ProfilePage() {
     setEmailInput(userEmail);
     setPhotoInput(userPhoto);
     setAddressInput(userAddress);
+    setPhoneInput(userPhone);
     setBankNameInput(userBankName);
-  }, [userName, userEmail, userPhoto, userAddress, userBankName]);
+  }, [userName, userEmail, userPhoto, userAddress, userPhone, userBankName]);
 
   const userOrders = orders.filter(o => o.userEmail === userEmail && userEmail !== "Guest");
   const lastOrder = userOrders.length > 0 ? userOrders[0] : null;
@@ -124,6 +126,7 @@ export default function ProfilePage() {
     // Email is the login identity — not editable from profile
     setUserPhoto(photoInput);
     setUserAddress(addressInput);
+    setUserPhone(phoneInput);
     setUserBankName(bankNameInput);
     toast({
       title: "Profile Updated",
@@ -340,6 +343,22 @@ export default function ProfilePage() {
                         onChange={(e) => setAddressInput(e.target.value)}
                         placeholder="House No, Street, City, ZIP Code"
                         className="pl-12 min-h-[120px] text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                      Phone Number
+                    </Label>
+                    <div className="relative group">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-accent transition-colors" />
+                      <Input
+                        id="phone"
+                        value={phoneInput}
+                        onChange={(e) => setPhoneInput(e.target.value)}
+                        placeholder="+91 00000 00000"
+                        className="pl-12 h-14 text-lg rounded-xl border-2 focus:border-accent transition-all bg-muted/10"
                       />
                     </div>
                   </div>

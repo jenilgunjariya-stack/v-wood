@@ -23,20 +23,20 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function AdminPage() {
-  const { 
-    products, 
-    orders, 
-    employees, 
-    updateOrderStatus, 
-    updateEmployeeStatus, 
-    payAllEmployees, 
-    addEmployee, 
-    updateEmployee, 
-    removeEmployee, 
-    resetPayroll, 
-    updateAttendance, 
-    updateProducts, 
-    storeSettings, 
+  const {
+    products,
+    orders,
+    employees,
+    updateOrderStatus,
+    updateEmployeeStatus,
+    payAllEmployees,
+    addEmployee,
+    updateEmployee,
+    removeEmployee,
+    resetPayroll,
+    updateAttendance,
+    updateProducts,
+    storeSettings,
     setStoreSettings,
     tasks,
     addTask,
@@ -51,9 +51,10 @@ export default function AdminPage() {
     userPhoto,
     helpRequests,
     updateHelpRequestStatus,
-    removeHelpRequest
+    removeHelpRequest,
+    loginLogs
   } = useStore();
-  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'ratings' | 'tasks' | 'billing' | 'account' | 'help'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'employees' | 'settings' | 'ratings' | 'tasks' | 'billing' | 'account' | 'help' | 'logins'>('products');
   const [empSubTab, setEmpSubTab] = useState<'list' | 'attendance' | 'report'>('list');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -133,7 +134,7 @@ export default function AdminPage() {
       order.paymentMethod === 'UPI' ? (order.upiId || 'N/A') : (order.paymentMethod === 'Card' ? `**** ${order.cardLast4 || '****'}` : 'N/A')
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + headers.join(",") + "\n"
       + rows.map(e => e.join(",")).join("\n");
 
@@ -266,12 +267,12 @@ export default function AdminPage() {
   const handleAddOfflineItem = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (!product) return;
-    
+
     const existing = offlineForm.items.find(item => item.id === productId);
     if (existing) {
       setOfflineForm({
         ...offlineForm,
-        items: offlineForm.items.map(item => 
+        items: offlineForm.items.map(item =>
           item.id === productId ? { ...item, quantity: item.quantity + 1 } : item
         )
       });
@@ -311,12 +312,12 @@ export default function AdminPage() {
     };
 
     addOrder(newOrder);
-    setOfflineForm({ 
-      customerName: "", 
-      customerAddress: "", 
+    setOfflineForm({
+      customerName: "",
+      customerAddress: "",
       customerPhone: "",
-      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }), 
-      items: [] 
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+      items: []
     });
     toast({ title: "Bill Generated", description: `Order ${orderId} successfully registered.` });
     router.push(`/order/${orderId}/bill`);
@@ -488,6 +489,16 @@ export default function AdminPage() {
               variant="ghost"
               className={cn(
                 "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
+                activeTab === 'logins' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
+              )}
+              onClick={() => setActiveTab('logins')}
+            >
+              <ClipboardList className="h-5 w-5" /> Login Info
+            </Button>
+            <Button
+              variant="ghost"
+              className={cn(
+                "w-full justify-start gap-4 h-14 rounded-2xl transition-all",
                 activeTab === 'settings' ? "bg-accent/20 text-accent font-bold" : "opacity-60"
               )}
               onClick={() => setActiveTab('settings')}
@@ -516,8 +527,8 @@ export default function AdminPage() {
                   <p className="text-muted-foreground mt-2 text-lg">Generate artisanal billing for walk-in studio guests.</p>
                 </div>
                 <div className="flex items-center gap-4 px-8 py-4 bg-primary text-white rounded-[2rem] shadow-2xl">
-                   <div className="h-3 w-3 bg-accent rounded-full animate-pulse shadow-sm shadow-accent/50" />
-                   <span className="text-xs font-bold uppercase tracking-[0.2em]">Live Bill Processor</span>
+                  <div className="h-3 w-3 bg-accent rounded-full animate-pulse shadow-sm shadow-accent/50" />
+                  <span className="text-xs font-bold uppercase tracking-[0.2em]">Live Bill Processor</span>
                 </div>
               </div>
 
@@ -527,30 +538,30 @@ export default function AdminPage() {
                   <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/[0.03] rounded-full -mr-32 -mt-32" />
                   <div className="flex flex-col md:flex-row justify-between items-start gap-12 relative z-10">
                     <div className="space-y-8">
-                       <div className="w-32 h-32 bg-white rounded-3xl p-6 shadow-2xl rotate-3">
-                         <img src={storeSettings.logoUrl} alt="Store Logo" className="w-full h-full object-contain" />
-                       </div>
-                       <div className="space-y-2">
-                         <h2 className="text-4xl font-headline font-bold text-accent">Artisanal Receipt</h2>
-                         <p className="text-white/40 text-xs font-bold uppercase tracking-[0.4em]">Draft Verification Piece</p>
-                       </div>
+                      <div className="w-32 h-32 bg-white rounded-3xl p-6 shadow-2xl rotate-3">
+                        <img src={storeSettings.logoUrl} alt="Store Logo" className="w-full h-full object-contain" />
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="text-4xl font-headline font-bold text-accent">Artisanal Receipt</h2>
+                        <p className="text-white/40 text-xs font-bold uppercase tracking-[0.4em]">Draft Verification Piece</p>
+                      </div>
                     </div>
-                    
+
                     <div className="text-right space-y-6">
-                       <div className="space-y-1">
-                          <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Studio Reference</p>
-                          <p className="text-2xl font-bold font-mono text-white/90 tracking-tighter">#V-WOOD-DRAFT</p>
-                       </div>
-                       <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Acquisition Date</p>
-                          <Input 
-                            type="text" 
-                            value={offlineForm.date} 
-                            onChange={e => setOfflineForm({...offlineForm, date: e.target.value})}
-                            className="bg-white/10 border-white/20 text-white text-right h-12 w-48 rounded-xl font-bold px-4"
-                            placeholder="e.g. 02 Apr, 2026"
-                          />
-                       </div>
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Studio Reference</p>
+                        <p className="text-2xl font-bold font-mono text-white/90 tracking-tighter">#V-WOOD-DRAFT</p>
+                      </div>
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-bold text-accent uppercase tracking-widest">Acquisition Date</p>
+                        <Input
+                          type="text"
+                          value={offlineForm.date}
+                          onChange={e => setOfflineForm({ ...offlineForm, date: e.target.value })}
+                          className="bg-white/10 border-white/20 text-white text-right h-12 w-48 rounded-xl font-bold px-4"
+                          placeholder="e.g. 02 Apr, 2026"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -558,177 +569,260 @@ export default function AdminPage() {
                 {/* Body Section */}
                 <div className="p-16 -mt-16 relative z-20">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-                     {/* Customer Details */}
-                     <div className="space-y-10">
-                        <div className="p-10 rounded-[3rem] bg-muted/30 border-2 border-dashed border-primary/5 space-y-8">
-                           <div className="flex items-center gap-4">
-                              <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                                <UserIcon className="h-5 w-5 text-primary" />
-                              </div>
-                              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary">Guest Credentials</h3>
-                           </div>
-                           <div className="space-y-6">
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Full Legal Name</Label>
-                                <Input 
-                                  value={offlineForm.customerName}
-                                  onChange={e => setOfflineForm({...offlineForm, customerName: e.target.value})}
-                                  placeholder="Master Collector Name"
-                                  className="h-14 bg-white border-primary/10 focus:border-accent rounded-2xl font-bold px-6"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mobile Contact</Label>
-                                <Input 
-                                  value={offlineForm.customerPhone}
-                                  onChange={e => setOfflineForm({...offlineForm, customerPhone: e.target.value})}
-                                  placeholder="Collector Phone"
-                                  className="h-14 bg-white border-primary/10 focus:border-accent rounded-2xl font-bold px-6"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Studio Address / Delivery Point</Label>
-                                <Textarea 
-                                  value={offlineForm.customerAddress}
-                                  onChange={e => setOfflineForm({...offlineForm, customerAddress: e.target.value})}
-                                  placeholder="Residence Detail"
-                                  className="min-h-[120px] bg-white border-primary/10 focus:border-accent rounded-[2rem] font-medium p-6"
-                                />
-                              </div>
-                           </div>
+                    {/* Customer Details */}
+                    <div className="space-y-10">
+                      <div className="p-10 rounded-[3rem] bg-muted/30 border-2 border-dashed border-primary/5 space-y-8">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                            <UserIcon className="h-5 w-5 text-primary" />
+                          </div>
+                          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary">Guest Credentials</h3>
                         </div>
-
-                        <div className="p-10 rounded-[3rem] bg-accent/5 border-2 border-accent/20 space-y-6">
-                           <div className="flex items-center gap-3 text-accent font-bold">
-                              <AlertTriangle className="h-5 w-5" />
-                              <span className="text-xs uppercase tracking-widest">In-Shop Verification</span>
-                           </div>
-                           <p className="text-xs text-accent/80 font-medium leading-relaxed">
-                             This bill confirms manual payment collection in-shop. Ensure the artisanal seal is physically stamped on the printed receipt for high-value collectors.
-                           </p>
-                        </div>
-                     </div>
-
-                     {/* Product Selection & Items */}
-                     <div className="space-y-10">
                         <div className="space-y-6">
-                           <div className="flex items-center justify-between">
-                              <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary">Acquisition Items</h3>
-                              <Select onValueChange={(val) => {
-                                const p = products.find(prod => prod.id === val);
-                                if (p) setOfflineForm({...offlineForm, items: [...offlineForm.items, { ...p, quantity: 1 }]});
-                              }}>
-                                <SelectTrigger className="h-12 w-[280px] bg-primary text-white border-none rounded-full shadow-xl hover:scale-105 transition-all text-xs font-bold uppercase tracking-widest">
-                                  <SelectValue placeholder="Add Studio Piece" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-none shadow-2xl">
-                                  {products.map(p => (
-                                    <SelectItem key={p.id} value={p.id} className="h-12 rounded-xl">
-                                                                            {p.name} - RS. {p.price.toLocaleString('en-IN')}/-
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                           </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Full Legal Name</Label>
+                            <Input
+                              value={offlineForm.customerName}
+                              onChange={e => setOfflineForm({ ...offlineForm, customerName: e.target.value })}
+                              placeholder="Master Collector Name"
+                              className="h-14 bg-white border-primary/10 focus:border-accent rounded-2xl font-bold px-6"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Mobile Contact</Label>
+                            <Input
+                              value={offlineForm.customerPhone}
+                              onChange={e => setOfflineForm({ ...offlineForm, customerPhone: e.target.value })}
+                              placeholder="Collector Phone"
+                              className="h-14 bg-white border-primary/10 focus:border-accent rounded-2xl font-bold px-6"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Studio Address / Delivery Point</Label>
+                            <Textarea
+                              value={offlineForm.customerAddress}
+                              onChange={e => setOfflineForm({ ...offlineForm, customerAddress: e.target.value })}
+                              placeholder="Residence Detail"
+                              className="min-h-[120px] bg-white border-primary/10 focus:border-accent rounded-[2rem] font-medium p-6"
+                            />
+                          </div>
+                        </div>
+                      </div>
 
-                           <div className="p-8 rounded-[3rem] border-2 border-primary/5 bg-white space-y-4">
-                              {offlineForm.items.length === 0 ? (
-                                <div className="py-20 text-center space-y-4">
-                                   <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
-                                     <ShoppingBag className="h-8 w-8 text-muted-foreground/30" />
-                                   </div>
-                                   <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest italic">Inventory Terminal Idle</p>
-                                </div>
-                              ) : (
-                                <div className="space-y-4">
-                                  {offlineForm.items.map((item, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-5 bg-muted/20 rounded-2xl group transition-all hover:bg-muted/40">
-                                      <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 rounded-xl overflow-hidden shadow-lg">
-                                          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
-                                        </div>
-                                        <div>
-                                          <p className="text-sm font-bold text-primary">{item.name}</p>
-                                                                                     <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">RS. {item.price.toLocaleString('en-IN')} / unit</p>
-                                        </div>
-                                      </div>
-                                      <div className="flex items-center gap-6">
-                                         <div className="flex items-center bg-white rounded-full p-1 border shadow-sm">
-                                            <button 
-                                              className="w-8 h-8 rounded-full hover:bg-muted font-bold text-primary"
-                                              onClick={() => {
-                                                const updated = offlineForm.items.map((it, i) => 
-                                                  i === idx ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it
-                                                );
-                                                setOfflineForm({...offlineForm, items: updated});
-                                              }}
-                                            >-</button>
-                                            <span className="text-xs font-black min-w-[30px] text-center">{item.quantity}</span>
-                                            <button 
-                                              className="w-8 h-8 rounded-full hover:bg-muted font-bold text-primary"
-                                              onClick={() => {
-                                                const updated = offlineForm.items.map((it, i) => 
-                                                  i === idx ? { ...it, quantity: it.quantity + 1 } : it
-                                                );
-                                                setOfflineForm({...offlineForm, items: updated});
-                                              }}
-                                            >+</button>
-                                         </div>
-                                         <button 
-                                            className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                                            onClick={() => setOfflineForm({...offlineForm, items: offlineForm.items.filter((_, i) => i !== idx)})}
-                                         >
-                                            <Trash2 className="h-4 w-4" />
-                                         </button>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                           </div>
+                      <div className="p-10 rounded-[3rem] bg-accent/5 border-2 border-accent/20 space-y-6">
+                        <div className="flex items-center gap-3 text-accent font-bold">
+                          <AlertTriangle className="h-5 w-5" />
+                          <span className="text-xs uppercase tracking-widest">In-Shop Verification</span>
+                        </div>
+                        <p className="text-xs text-accent/80 font-medium leading-relaxed">
+                          This bill confirms manual payment collection in-shop. Ensure the artisanal seal is physically stamped on the printed receipt for high-value collectors.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Product Selection & Items */}
+                    <div className="space-y-10">
+                      <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-primary">Acquisition Items</h3>
+                          <Select onValueChange={(val) => {
+                            const p = products.find(prod => prod.id === val);
+                            if (p) setOfflineForm({ ...offlineForm, items: [...offlineForm.items, { ...p, quantity: 1 }] });
+                          }}>
+                            <SelectTrigger className="h-12 w-[280px] bg-primary text-white border-none rounded-full shadow-xl hover:scale-105 transition-all text-xs font-bold uppercase tracking-widest">
+                              <SelectValue placeholder="Add Studio Piece" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-2xl border-none shadow-2xl">
+                              {products.map(p => (
+                                <SelectItem key={p.id} value={p.id} className="h-12 rounded-xl">
+                                  {p.name} - RS. {p.price.toLocaleString('en-IN')}/-
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
-                        <div className="p-10 rounded-[3rem] bg-primary text-white space-y-8 shadow-2xl relative overflow-hidden group">
-                           <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                           <div className="space-y-4 relative z-10">
-                              <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
-                                 <span>Subtotal Assessment</span>
-                                                                   <span>RS. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}/-</span>
+                        <div className="p-8 rounded-[3rem] border-2 border-primary/5 bg-white space-y-4">
+                          {offlineForm.items.length === 0 ? (
+                            <div className="py-20 text-center space-y-4">
+                              <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto">
+                                <ShoppingBag className="h-8 w-8 text-muted-foreground/30" />
                               </div>
-                              <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
-                                 <span>Artisanal Tax / Handling</span>
-                                 <span className="text-accent underline underline-offset-4 decoration-2">WAIVED</span>
-                              </div>
-                              <div className="pt-6 border-t border-white/10 flex justify-between items-end">
-                                 <div>
-                                   <p className="text-[10px] font-black text-accent uppercase tracking-[0.3em] mb-2 leading-none text-glow">Final Bill Amount</p>
-                                   <p className="text-5xl font-headline font-bold tracking-tighter leading-none">
-                                     Rs. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}
-                                   </p>
-                                 </div>
-                                 <div className="text-right">
-                                    <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
-                                      <CheckCircle2 className="h-8 w-8 text-accent" />
+                              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest italic">Inventory Terminal Idle</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              {offlineForm.items.map((item, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-5 bg-muted/20 rounded-2xl group transition-all hover:bg-muted/40">
+                                  <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-xl overflow-hidden shadow-lg">
+                                      <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
                                     </div>
-                                 </div>
-                              </div>
-                           </div>
-                           
-                           <Button 
-                             onClick={handleGenerateOfflineBill}
-                             className="w-full h-20 bg-accent text-accent-foreground font-black text-xl rounded-[1.5rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] transition-all hover:scale-[1.02] active:scale-95 group relative z-10 overflow-hidden"
-                           >
-                              <div className="relative z-10 flex items-center gap-4">
-                                <Save className="h-7 w-7" />
-                                COMPLETE ACQUISITION & PRINT
-                              </div>
-                           </Button>
+                                    <div>
+                                      <p className="text-sm font-bold text-primary">{item.name}</p>
+                                      <p className="text-[9px] font-bold text-accent uppercase tracking-widest italic">RS. {item.price.toLocaleString('en-IN')} / unit</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-6">
+                                    <div className="flex items-center bg-white rounded-full p-1 border shadow-sm">
+                                      <button
+                                        className="w-8 h-8 rounded-full hover:bg-muted font-bold text-primary"
+                                        onClick={() => {
+                                          const updated = offlineForm.items.map((it, i) =>
+                                            i === idx ? { ...it, quantity: Math.max(1, it.quantity - 1) } : it
+                                          );
+                                          setOfflineForm({ ...offlineForm, items: updated });
+                                        }}
+                                      >-</button>
+                                      <span className="text-xs font-black min-w-[30px] text-center">{item.quantity}</span>
+                                      <button
+                                        className="w-8 h-8 rounded-full hover:bg-muted font-bold text-primary"
+                                        onClick={() => {
+                                          const updated = offlineForm.items.map((it, i) =>
+                                            i === idx ? { ...it, quantity: it.quantity + 1 } : it
+                                          );
+                                          setOfflineForm({ ...offlineForm, items: updated });
+                                        }}
+                                      >+</button>
+                                    </div>
+                                    <button
+                                      className="h-8 w-8 rounded-full flex items-center justify-center text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                      onClick={() => setOfflineForm({ ...offlineForm, items: offlineForm.items.filter((_, i) => i !== idx) })}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                     </div>
+                      </div>
+
+                      <div className="p-10 rounded-[3rem] bg-primary text-white space-y-8 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-accent/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="space-y-4 relative z-10">
+                          <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                            <span>Subtotal Assessment</span>
+                            <span>RS. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}/-</span>
+                          </div>
+                          <div className="flex justify-between items-center text-white/40 text-[10px] font-bold uppercase tracking-widest">
+                            <span>Artisanal Tax / Handling</span>
+                            <span className="text-accent underline underline-offset-4 decoration-2">WAIVED</span>
+                          </div>
+                          <div className="pt-6 border-t border-white/10 flex justify-between items-end">
+                            <div>
+                              <p className="text-[10px] font-black text-accent uppercase tracking-[0.3em] mb-2 leading-none text-glow">Final Bill Amount</p>
+                              <p className="text-5xl font-headline font-bold tracking-tighter leading-none">
+                                Rs. {offlineForm.items.reduce((acc, item) => acc + (item.price * item.quantity), 0).toLocaleString('en-IN')}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <div className="w-16 h-16 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/10">
+                                <CheckCircle2 className="h-8 w-8 text-accent" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          onClick={handleGenerateOfflineBill}
+                          className="w-full h-20 bg-accent text-accent-foreground font-black text-xl rounded-[1.5rem] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] transition-all hover:scale-[1.02] active:scale-95 group relative z-10 overflow-hidden"
+                        >
+                          <div className="relative z-10 flex items-center gap-4">
+                            <Save className="h-7 w-7" />
+                            COMPLETE ACQUISITION & PRINT
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
+          )}
+          {activeTab === 'logins' && (
+             <div className="animate-in fade-in duration-500 space-y-12">
+               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                 <div>
+                   <h1 className="text-5xl font-headline font-bold text-primary">Login Information</h1>
+                   <p className="text-muted-foreground mt-2 text-lg">Registry of all authentication events across the platform.</p>
+                 </div>
+                 <div className="flex gap-4">
+                    <Card className="bg-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Logins</p>
+                      <p className="text-4xl font-headline font-bold text-primary">{loginLogs.length}</p>
+                    </Card>
+                    <Card className="bg-primary text-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
+                      <p className="text-[10px] font-bold text-accent uppercase tracking-widest mb-1">Unique Users</p>
+                      <p className="text-4xl font-headline font-bold">{new Set(loginLogs.map(l => l.email)).size}</p>
+                    </Card>
+                 </div>
+               </div>
+
+               <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
+                 <CardHeader className="bg-muted/30 p-10 border-b">
+                   <div className="flex items-center justify-between">
+                     <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                       <LayoutList className="h-6 w-6 text-accent" /> Login Session Registry
+                     </CardTitle>
+                   </div>
+                 </CardHeader>
+                 <CardContent className="p-0">
+                   <ScrollArea className="w-full">
+                     <Table>
+                       <TableHeader className="bg-muted/50">
+                         <TableRow className="h-20 hover:bg-transparent border-none">
+                           <TableHead className="pl-10 font-bold uppercase tracking-widest text-[10px]">User Identity</TableHead>
+                           <TableHead className="font-bold uppercase tracking-widest text-[10px]">Authentication Time</TableHead>
+                           <TableHead className="font-bold uppercase tracking-widest text-[10px]">Role</TableHead>
+                           <TableHead className="pr-10 font-bold uppercase tracking-widest text-[10px]">Device Fingerprint</TableHead>
+                         </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                         {loginLogs.length === 0 ? (
+                           <TableRow className="h-40">
+                             <TableCell colSpan={4} className="text-center italic text-muted-foreground">No login events recorded in the registry.</TableCell>
+                           </TableRow>
+                         ) : (
+                           loginLogs.map((log) => (
+                             <TableRow key={log.id} className="h-24 hover:bg-muted/10 transition-colors border-muted/5">
+                               <TableCell className="pl-10">
+                                 <div className="flex items-center gap-4">
+                                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                     {log.email[0].toUpperCase()}
+                                   </div>
+                                   <div>
+                                     <p className="font-bold text-primary">{log.email}</p>
+                                     <p className="text-[10px] text-muted-foreground font-mono">{log.id}</p>
+                                   </div>
+                                 </div>
+                               </TableCell>
+                               <TableCell className="font-medium text-muted-foreground">{log.timestamp}</TableCell>
+                               <TableCell>
+                                 <Badge className={cn(
+                                   "font-bold uppercase tracking-tighter px-3 h-6",
+                                   log.role === 'Admin' ? "bg-red-500" : (log.role === 'Delivery' ? "bg-blue-500" : "bg-green-500")
+                                 )}>
+                                   {log.role}
+                                 </Badge>
+                               </TableCell>
+                               <TableCell className="pr-10">
+                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                   <Smartphone className="h-3 w-3" />
+                                   <span className="truncate max-w-[200px]">{log.device || 'Web Browser'}</span>
+                                 </div>
+                               </TableCell>
+                             </TableRow>
+                           ))
+                         )}
+                       </TableBody>
+                     </Table>
+                     <ScrollBar orientation="horizontal" />
+                   </ScrollArea>
+                 </CardContent>
+               </Card>
+             </div>
           )}
           {activeTab === 'products' && (
             <div className="animate-in fade-in duration-500">
@@ -1154,9 +1248,9 @@ export default function AdminPage() {
                               <span className="text-sm font-bold text-muted-foreground">{rating.date}</span>
                             </td>
                             <td className="px-8 py-6 text-right">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 className="h-10 w-10 rounded-full text-destructive hover:bg-destructive/10"
                                 onClick={() => {
                                   if (confirm("Moderate Review: Are you sure you want to delete this appraisal?")) {
@@ -1291,7 +1385,7 @@ export default function AdminPage() {
                       <CardContent className="pt-10 p-8">
                         <p className="text-[10px] font-bold text-accent uppercase tracking-[0.3em] mb-3">Monthly Liability</p>
                         <p className="text-4xl font-bold">
-                                                    RS. {employees.filter(e => e.paymentStatus === 'Pending').reduce((s, e) => s + e.salary, 0).toLocaleString('en-IN')}/-
+                          RS. {employees.filter(e => e.paymentStatus === 'Pending').reduce((s, e) => s + e.salary, 0).toLocaleString('en-IN')}/-
                         </p>
                       </CardContent>
                     </Card>
@@ -1318,7 +1412,7 @@ export default function AdminPage() {
                             <td className="px-8 py-6">
                               <span className="text-sm font-bold text-muted-foreground uppercase tracking-widest">{emp.role}</span>
                             </td>
-                                                         <td className="px-8 py-6 font-bold text-primary text-lg">RS. {emp.salary.toLocaleString('en-IN')}/-</td>
+                            <td className="px-8 py-6 font-bold text-primary text-lg">RS. {emp.salary.toLocaleString('en-IN')}/-</td>
                             <td className="px-8 py-6">
                               <div className="flex flex-col">
                                 <button
@@ -1373,8 +1467,8 @@ export default function AdminPage() {
               )}
 
               {empSubTab === 'attendance' && (
-                  <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
-                    <table className="w-full text-left min-w-[800px]">
+                <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                  <table className="w-full text-left min-w-[800px]">
                     <thead className="bg-muted/50 border-b">
                       <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
                         <th className="px-8 py-6">Artisan</th>
@@ -1541,180 +1635,180 @@ export default function AdminPage() {
             });
 
             return (
-            <div className="animate-in fade-in duration-500">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16">
-                <div className="space-y-1">
-                  <h1 className="text-5xl font-headline font-bold text-primary">Acquisition History</h1>
-                  <p className="text-muted-foreground text-lg">Filter and view monthly orders.</p>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(-1)}>
-                      <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 font-bold px-5 py-2 flex items-center gap-3 text-xs uppercase tracking-[0.2em] rounded-full">
-                      <Calendar className="h-4 w-4" />
-                      {formatMonthYear(ordersDate)}
-                    </Badge>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(1)}>
-                      <ChevronRight className="h-5 w-5" />
-                    </Button>
+              <div className="animate-in fade-in duration-500">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16">
+                  <div className="space-y-1">
+                    <h1 className="text-5xl font-headline font-bold text-primary">Acquisition History</h1>
+                    <p className="text-muted-foreground text-lg">Filter and view monthly orders.</p>
                   </div>
-                  {currentOrders.some(o => o.status === 'Cancelled') && (
-                    <div className="flex items-center gap-4 px-8 py-4 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] animate-in slide-in-from-right duration-500">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
-                        <AlertTriangle className="h-5 w-5 text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-red-700 uppercase tracking-[0.2em] mb-1">Customer Retraction</p>
-                        <p className="text-xs font-bold text-red-900 uppercase tracking-widest leading-none">
-                          {currentOrders.filter(o => o.status === 'Cancelled').length} Order(s) Marked as Cancelled
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3">
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(-1)}>
+                        <ChevronLeft className="h-5 w-5" />
+                      </Button>
+                      <Badge variant="outline" className="bg-accent/10 text-accent border-accent/20 font-bold px-5 py-2 flex items-center gap-3 text-xs uppercase tracking-[0.2em] rounded-full">
+                        <Calendar className="h-4 w-4" />
+                        {formatMonthYear(ordersDate)}
+                      </Badge>
+                      <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-muted/50" onClick={() => changeOrdersMonth(1)}>
+                        <ChevronRight className="h-5 w-5" />
+                      </Button>
                     </div>
-                  )}
+                    {currentOrders.some(o => o.status === 'Cancelled') && (
+                      <div className="flex items-center gap-4 px-8 py-4 bg-red-50 border-2 border-dashed border-red-200 rounded-[2rem] animate-in slide-in-from-right duration-500">
+                        <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
+                          <AlertTriangle className="h-5 w-5 text-red-600" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-red-700 uppercase tracking-[0.2em] mb-1">Customer Retraction</p>
+                          <p className="text-xs font-bold text-red-900 uppercase tracking-widest leading-none">
+                            {currentOrders.filter(o => o.status === 'Cancelled').length} Order(s) Marked as Cancelled
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
-                <table className="w-full text-left font-body min-w-[1000px]">
-                  <thead className="bg-muted/50 border-b">
-                    <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
-                      <th className="px-8 py-6">Order Reference</th>
-                      <th className="px-8 py-6">Collector</th>
-                      <th className="px-8 py-6">Investment</th>
-                      <th className="px-8 py-6">Expected Arrival</th>
-                      <th className="px-8 py-6">Current Stage</th>
-                      <th className="px-8 py-6 text-right">Acquisition File</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {currentOrders.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="px-8 py-20 text-center text-muted-foreground italic font-bold">
-                          No orders found for {formatMonthYear(ordersDate)}.
-                        </td>
+                <div className="overflow-x-auto bg-white rounded-[2.5rem] border shadow-2xl">
+                  <table className="w-full text-left font-body min-w-[1000px]">
+                    <thead className="bg-muted/50 border-b">
+                      <tr className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground">
+                        <th className="px-8 py-6">Order Reference</th>
+                        <th className="px-8 py-6">Collector</th>
+                        <th className="px-8 py-6">Investment</th>
+                        <th className="px-8 py-6">Expected Arrival</th>
+                        <th className="px-8 py-6">Current Stage</th>
+                        <th className="px-8 py-6 text-right">Acquisition File</th>
                       </tr>
-                    ) : (
-                      currentOrders.map((order) => (
-                        <tr key={order.id} className={cn(
-                          "hover:bg-muted/10 transition-colors",
-                          order.status === 'Cancelled' && "bg-red-50/40 opacity-80"
-                        )}>
-                          <td className="px-8 py-6 font-bold text-primary text-lg">
-                             <div className="flex flex-col gap-1">
-                               {order.id}
-                               {order.paymentMethod === 'In-Shop' && (
-                                 <Badge className="w-fit bg-accent/20 text-accent border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
-                                   Physical Studio
-                                 </Badge>
-                               )}
-                             </div>
+                    </thead>
+                    <tbody className="divide-y">
+                      {currentOrders.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-8 py-20 text-center text-muted-foreground italic font-bold">
+                            No orders found for {formatMonthYear(ordersDate)}.
                           </td>
-                          <td className="px-8 py-6 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                        </tr>
+                      ) : (
+                        currentOrders.map((order) => (
+                          <tr key={order.id} className={cn(
+                            "hover:bg-muted/10 transition-colors",
+                            order.status === 'Cancelled' && "bg-red-50/40 opacity-80"
+                          )}>
+                            <td className="px-8 py-6 font-bold text-primary text-lg">
+                              <div className="flex flex-col gap-1">
+                                {order.id}
+                                {order.paymentMethod === 'In-Shop' && (
+                                  <Badge className="w-fit bg-accent/20 text-accent border-none text-[8px] font-black uppercase tracking-widest px-2 py-0.5">
+                                    Physical Studio
+                                  </Badge>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-sm font-bold uppercase tracking-widest text-muted-foreground">
                               <div className="flex flex-col gap-1">
                                 {order.customerName}
                                 <span className="text-[10px] text-accent lowercase font-mono">{order.customerPhone}</span>
                               </div>
-                          </td>
-                          <td className="px-8 py-6 font-bold text-accent text-lg">Rs. {order.total.toLocaleString('en-IN')}</td>
-                          <td className="px-8 py-6">
-                            <p className="text-sm font-bold text-primary">
-                              {new Date(new Date((order.date || "").replace(' at ', ' ')).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
-                                day: 'numeric', month: 'short', year: 'numeric'
-                              })}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Est. Completion</p>
-                          </td>
-                          <td className="px-8 py-6">
-                            <Select
-                              value={order.status}
-                              onValueChange={(val) => updateOrderStatus(order.id, val as Order['status'])}
-                            >
-                              <SelectTrigger className="h-10 w-[180px] text-xs font-bold uppercase tracking-widest rounded-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Confirmed">Order Confirmed</SelectItem>
-                                <SelectItem value="Awaiting Verification">Awaiting Payment Verification</SelectItem>
-                                <SelectItem value="Processing">Acquisition Accepted</SelectItem>
-                                <SelectItem value="Shipped">In Transit</SelectItem>
-                                <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
-                                <SelectItem value="Delivered">Delivered & Verified</SelectItem>
-                                <SelectItem value="Cancelled">Cancelled by Customer</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </td>
-                          <td className="px-8 py-6 text-right">
-                            <div className="flex items-center justify-end gap-3">
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-10 px-6 rounded-full font-bold bg-muted/50 hover:bg-muted">
-                                    Details
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle className="font-headline text-3xl">Order Information</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="space-y-6 pt-4 text-left">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/10 p-6 rounded-[2rem] border border-primary/5">
-                                      <div>
-                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Customer Name</p>
-                                        <p className="font-bold text-lg text-primary">{order.customerName}</p>
-                                      </div>
-                                      <div>
-                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Order Date</p>
-                                        <p className="font-bold text-lg text-primary">{order.date}</p>
-                                      </div>
-                                      <div>
-                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Payment Method</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <Badge className="bg-accent/10 border-none text-accent font-black uppercase tracking-widest px-3 py-1">
-                                            {order.paymentMethod || 'Not Specified'}
-                                          </Badge>
+                            </td>
+                            <td className="px-8 py-6 font-bold text-accent text-lg">Rs. {order.total.toLocaleString('en-IN')}</td>
+                            <td className="px-8 py-6">
+                              <p className="text-sm font-bold text-primary">
+                                {new Date(new Date((order.date || "").replace(' at ', ' ')).getTime() + 4 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', {
+                                  day: 'numeric', month: 'short', year: 'numeric'
+                                })}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-1">Est. Completion</p>
+                            </td>
+                            <td className="px-8 py-6">
+                              <Select
+                                value={order.status}
+                                onValueChange={(val) => updateOrderStatus(order.id, val as Order['status'])}
+                              >
+                                <SelectTrigger className="h-10 w-[180px] text-xs font-bold uppercase tracking-widest rounded-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Confirmed">Order Confirmed</SelectItem>
+                                  <SelectItem value="Awaiting Verification">Awaiting Payment Verification</SelectItem>
+                                  <SelectItem value="Processing">Acquisition Accepted</SelectItem>
+                                  <SelectItem value="Shipped">In Transit</SelectItem>
+                                  <SelectItem value="Out for Delivery">Out for Delivery</SelectItem>
+                                  <SelectItem value="Delivered">Delivered & Verified</SelectItem>
+                                  <SelectItem value="Cancelled">Cancelled by Customer</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="px-8 py-6 text-right">
+                              <div className="flex items-center justify-end gap-3">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="h-10 px-6 rounded-full font-bold bg-muted/50 hover:bg-muted">
+                                      Details
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle className="font-headline text-3xl">Order Information</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-6 pt-4 text-left">
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-muted/10 p-6 rounded-[2rem] border border-primary/5">
+                                        <div>
+                                          <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Customer Name</p>
+                                          <p className="font-bold text-lg text-primary">{order.customerName}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Order Date</p>
+                                          <p className="font-bold text-lg text-primary">{order.date}</p>
+                                        </div>
+                                        <div>
+                                          <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Payment Method</p>
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <Badge className="bg-accent/10 border-none text-accent font-black uppercase tracking-widest px-3 py-1">
+                                              {order.paymentMethod || 'Not Specified'}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Mobile Number</p>
+                                          <p className="font-bold text-lg text-primary">{order.customerPhone || 'Not Specified'}</p>
+                                        </div>
+                                        <div className="col-span-1 md:col-span-2">
+                                          <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Address</p>
+                                          <p className="font-bold text-lg text-primary">{order.customerAddress}</p>
                                         </div>
                                       </div>
                                       <div>
-                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Mobile Number</p>
-                                        <p className="font-bold text-lg text-primary">{order.customerPhone || 'Not Specified'}</p>
-                                      </div>
-                                      <div className="col-span-1 md:col-span-2">
-                                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-[10px] mb-1">Address</p>
-                                        <p className="font-bold text-lg text-primary">{order.customerAddress}</p>
+                                        <p className="font-bold text-muted-foreground uppercase tracking-[0.2em] text-[10px] mb-4">Products Acquired</p>
+                                        <div className="space-y-4">
+                                          {order.items.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-5 bg-white p-4 rounded-2xl border shadow-sm">
+                                              <div className="h-16 w-16 rounded-xl bg-muted overflow-hidden shrink-0 border p-1">
+                                                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-lg" />
+                                              </div>
+                                              <div className="flex-1">
+                                                <p className="font-bold text-primary">{item.name}</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Quantity: {item.quantity}</p>
+                                              </div>
+                                              <p className="font-bold text-accent text-lg">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}</p>
+                                            </div>
+                                          ))}
+                                        </div>
                                       </div>
                                     </div>
-                                    <div>
-                                      <p className="font-bold text-muted-foreground uppercase tracking-[0.2em] text-[10px] mb-4">Products Acquired</p>
-                                      <div className="space-y-4">
-                                        {order.items.map((item, idx) => (
-                                          <div key={idx} className="flex items-center gap-5 bg-white p-4 rounded-2xl border shadow-sm">
-                                            <div className="h-16 w-16 rounded-xl bg-muted overflow-hidden shrink-0 border p-1">
-                                              <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover rounded-lg" />
-                                            </div>
-                                            <div className="flex-1">
-                                              <p className="font-bold text-primary">{item.name}</p>
-                                              <p className="text-[10px] text-muted-foreground font-bold tracking-widest uppercase">Quantity: {item.quantity}</p>
-                                            </div>
-                                            <p className="font-bold text-accent text-lg">Rs. {(item.price * item.quantity).toLocaleString('en-IN')}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                              <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-full border-accent text-accent font-bold hover:bg-accent hover:text-white transition-all">
-                                <Link href={`/order/${order.id}/bill`}>Digital Bill</Link>
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                                  </DialogContent>
+                                </Dialog>
+                                <Button asChild variant="outline" size="sm" className="h-10 px-6 rounded-full border-accent text-accent font-bold hover:bg-accent hover:text-white transition-all">
+                                  <Link href={`/order/${order.id}/bill`}>Digital Bill</Link>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
             );
           })()}
 
@@ -1915,9 +2009,9 @@ export default function AdminPage() {
                                 <SelectItem value="Not Applicable">Not Applicable</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               className="h-11 w-11 rounded-full text-muted-foreground hover:bg-accent/10 hover:text-accent transition-colors"
                               onClick={() => {
                                 setEditingTask(task);
@@ -1961,7 +2055,7 @@ export default function AdminPage() {
                     <div className="space-y-6 pt-6">
                       <div className="space-y-2">
                         <Label>Task Title</Label>
-                        <Input 
+                        <Input
                           value={editingTask.title}
                           onChange={(e) => setEditingTask({ ...editingTask, title: e.target.value })}
                           className="h-12"
@@ -1969,7 +2063,7 @@ export default function AdminPage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Detailed Description</Label>
-                        <Textarea 
+                        <Textarea
                           className="min-h-[120px]"
                           value={editingTask.description}
                           onChange={(e) => setEditingTask({ ...editingTask, description: e.target.value })}
@@ -1991,8 +2085,8 @@ export default function AdminPage() {
                   <h1 className="text-5xl font-headline font-bold text-primary">Financial Accounts</h1>
                   <p className="text-muted-foreground mt-2 text-lg">Detailed payment tracking and merchant settlement records.</p>
                 </div>
-                <Button 
-                  onClick={downloadAccountsReport} 
+                <Button
+                  onClick={downloadAccountsReport}
                   className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold rounded-full h-14 px-8 shadow-xl transition-all hover:scale-105"
                 >
                   <FileBarChart2 className="mr-3 h-5 w-5" />
@@ -2005,7 +2099,7 @@ export default function AdminPage() {
                   <CardContent className="p-8">
                     <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-2">Total Settled (Online)</p>
                     <h3 className="text-3xl font-headline font-bold text-primary">
-                                            RS. {orders.filter(o => o.paymentMethod !== 'COD').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                      RS. {orders.filter(o => o.paymentMethod !== 'COD').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
                     </h3>
                   </CardContent>
                 </Card>
@@ -2013,7 +2107,7 @@ export default function AdminPage() {
                   <CardContent className="p-8">
                     <p className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest mb-2">Pending Collection (COD)</p>
                     <h3 className="text-3xl font-headline font-bold text-primary">
-                                            RS. {orders.filter(o => o.paymentMethod === 'COD' && o.status !== 'Delivered').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
+                      RS. {orders.filter(o => o.paymentMethod === 'COD' && o.status !== 'Delivered').reduce((acc, o) => acc + o.total, 0).toLocaleString('en-IN')}/-
                     </h3>
                   </CardContent>
                 </Card>
@@ -2097,7 +2191,7 @@ export default function AdminPage() {
                               <span className="text-lg font-black text-primary">Rs. {order.total.toLocaleString('en-IN')}</span>
                             </TableCell>
                             <TableCell>
-                              <Badge 
+                              <Badge
                                 className={cn(
                                   "rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest",
                                   (order.paymentMethod !== 'COD' || order.status === 'Delivered') ? "bg-green-500 text-white" : "bg-yellow-500 text-white"
@@ -2107,9 +2201,9 @@ export default function AdminPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="pr-10 text-right">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
+                              <Button
+                                variant="outline"
+                                size="sm"
                                 className="h-9 px-4 rounded-full border-primary/20 hover:border-accent hover:text-accent font-bold text-[10px] uppercase tracking-widest"
                                 onClick={() => setSelectedOrderAccount(order)}
                               >
@@ -2168,55 +2262,55 @@ export default function AdminPage() {
                         </div>
 
                         <div className="p-8 rounded-[2rem] bg-muted/30 border-2 border-dashed border-primary/10 space-y-6">
-                           <div className="flex items-center justify-between">
-                              <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Payment Method</p>
-                              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border shadow-sm">
-                                {selectedOrderAccount.paymentMethod === 'UPI' && <Smartphone className="h-4 w-4 text-purple-500" />}
-                                {selectedOrderAccount.paymentMethod === 'Card' && <CreditCard className="h-4 w-4 text-blue-500" />}
-                                {selectedOrderAccount.paymentMethod === 'COD' && <Banknote className="h-4 w-4 text-green-500" />}
-                                <span className="text-xs font-black uppercase tracking-widest">
-                                  {selectedOrderAccount.paymentMethod} Payment
+                          <div className="flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Payment Method</p>
+                            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border shadow-sm">
+                              {selectedOrderAccount.paymentMethod === 'UPI' && <Smartphone className="h-4 w-4 text-purple-500" />}
+                              {selectedOrderAccount.paymentMethod === 'Card' && <CreditCard className="h-4 w-4 text-blue-500" />}
+                              {selectedOrderAccount.paymentMethod === 'COD' && <Banknote className="h-4 w-4 text-green-500" />}
+                              <span className="text-xs font-black uppercase tracking-widest">
+                                {selectedOrderAccount.paymentMethod} Payment
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4 pt-4 border-t border-primary/5">
+                            {selectedOrderAccount.transactionId && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-muted-foreground">Transaction ID</span>
+                                <span className="font-mono text-sm font-bold text-primary">{selectedOrderAccount.transactionId}</span>
+                              </div>
+                            )}
+                            {selectedOrderAccount.paymentMethod === 'UPI' && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-muted-foreground">Customer UPI ID</span>
+                                <span className="font-mono text-sm font-bold text-purple-600">{selectedOrderAccount.upiId || 'N/A'}</span>
+                              </div>
+                            )}
+                            {selectedOrderAccount.paymentMethod === 'Card' && (
+                              <>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-muted-foreground">Cardholder Name</span>
+                                  <span className="font-bold text-sm text-primary uppercase">{selectedOrderAccount.cardHolderName || 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs font-bold text-muted-foreground">Card Detail</span>
+                                  <span className="font-mono text-sm font-bold text-blue-600">XXXX XXXX XXXX {selectedOrderAccount.cardLast4 || 'XXXX'}</span>
+                                </div>
+                              </>
+                            )}
+                            {selectedOrderAccount.paymentMethod === 'COD' && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-xs font-bold text-muted-foreground">COD Fulfillment</span>
+                                <span className="text-sm font-bold text-green-600 uppercase tracking-widest">
+                                  {selectedOrderAccount.status === 'Delivered' ? 'Fully Collected' : 'Pending Delivery'}
                                 </span>
                               </div>
-                           </div>
-
-                           <div className="space-y-4 pt-4 border-t border-primary/5">
-                              {selectedOrderAccount.transactionId && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-bold text-muted-foreground">Transaction ID</span>
-                                  <span className="font-mono text-sm font-bold text-primary">{selectedOrderAccount.transactionId}</span>
-                                </div>
-                              )}
-                              {selectedOrderAccount.paymentMethod === 'UPI' && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-bold text-muted-foreground">Customer UPI ID</span>
-                                  <span className="font-mono text-sm font-bold text-purple-600">{selectedOrderAccount.upiId || 'N/A'}</span>
-                                </div>
-                              )}
-                              {selectedOrderAccount.paymentMethod === 'Card' && (
-                                <>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-muted-foreground">Cardholder Name</span>
-                                    <span className="font-bold text-sm text-primary uppercase">{selectedOrderAccount.cardHolderName || 'N/A'}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-xs font-bold text-muted-foreground">Card Detail</span>
-                                    <span className="font-mono text-sm font-bold text-blue-600">XXXX XXXX XXXX {selectedOrderAccount.cardLast4 || 'XXXX'}</span>
-                                  </div>
-                                </>
-                              )}
-                              {selectedOrderAccount.paymentMethod === 'COD' && (
-                                <div className="flex justify-between items-center">
-                                  <span className="text-xs font-bold text-muted-foreground">COD Fulfillment</span>
-                                  <span className="text-sm font-bold text-green-600 uppercase tracking-widest">
-                                    {selectedOrderAccount.status === 'Delivered' ? 'Fully Collected' : 'Pending Delivery'}
-                                  </span>
-                                </div>
-                              )}
-                           </div>
+                            )}
+                          </div>
                         </div>
 
-                        <Button 
+                        <Button
                           className="w-full h-14 rounded-2xl bg-primary text-white font-bold"
                           onClick={() => setSelectedOrderAccount(null)}
                         >
@@ -2266,8 +2360,8 @@ export default function AdminPage() {
                       <TableRow>
                         <TableCell colSpan={5} className="h-64 text-center">
                           <div className="flex flex-col items-center gap-4 opacity-40">
-                             <HelpCircle className="h-12 w-12" />
-                             <p className="text-sm font-bold uppercase tracking-widest">No active inquiries</p>
+                            <HelpCircle className="h-12 w-12" />
+                            <p className="text-sm font-bold uppercase tracking-widest">No active inquiries</p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -2276,8 +2370,8 @@ export default function AdminPage() {
                         <TableRow key={request.id} className="h-28 hover:bg-muted/30 transition-colors">
                           <TableCell className="pl-10">
                             <div>
-                               <p className="font-bold text-primary text-base md:text-lg">{request.name}</p>
-                               <p className="text-xs text-accent font-bold mt-1 tracking-tight">{request.contact}</p>
+                              <p className="font-bold text-primary text-base md:text-lg">{request.name}</p>
+                              <p className="text-xs text-accent font-bold mt-1 tracking-tight">{request.contact}</p>
                             </div>
                           </TableCell>
                           <TableCell className="max-w-md">
@@ -2289,36 +2383,36 @@ export default function AdminPage() {
                             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{request.date}</span>
                           </TableCell>
                           <TableCell>
-                             <Select 
-                               value={request.status} 
-                               onValueChange={(val) => updateHelpRequestStatus(request.id, val as any)}
-                             >
-                               <SelectTrigger className={cn(
-                                 "h-10 w-32 rounded-full font-bold text-[10px] uppercase tracking-widest border-2",
-                                 request.status === 'Resolved' ? "border-green-500/20 text-green-600 bg-green-50" : "border-yellow-500/20 text-yellow-600 bg-yellow-50"
-                               )}>
-                                 <SelectValue />
-                               </SelectTrigger>
-                               <SelectContent>
-                                 <SelectItem value="Pending">Pending</SelectItem>
-                                 <SelectItem value="Resolved">Resolved</SelectItem>
-                               </SelectContent>
-                             </Select>
+                            <Select
+                              value={request.status}
+                              onValueChange={(val) => updateHelpRequestStatus(request.id, val as any)}
+                            >
+                              <SelectTrigger className={cn(
+                                "h-10 w-32 rounded-full font-bold text-[10px] uppercase tracking-widest border-2",
+                                request.status === 'Resolved' ? "border-green-500/20 text-green-600 bg-green-50" : "border-yellow-500/20 text-yellow-600 bg-yellow-50"
+                              )}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Resolved">Resolved</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell className="pr-10 text-right">
-                             <Button 
-                               variant="ghost" 
-                               size="icon" 
-                               className="h-12 w-12 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all"
-                               onClick={() => {
-                                 if (confirm("Delete Request: Are you sure you want to remove this enquiry?")) {
-                                   removeHelpRequest(request.id);
-                                   toast({ title: "Inquiry Removed", description: "The ticket has been deleted from history." });
-                                 }
-                               }}
-                             >
-                               <Trash2 className="h-5 w-5" />
-                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-12 w-12 rounded-full text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all"
+                              onClick={() => {
+                                if (confirm("Delete Request: Are you sure you want to remove this enquiry?")) {
+                                  removeHelpRequest(request.id);
+                                  toast({ title: "Inquiry Removed", description: "The ticket has been deleted from history." });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))

@@ -48,6 +48,14 @@ export interface Order {
   upiId?: string;
 }
 
+export interface LoginLog {
+  id: string;
+  email: string;
+  timestamp: string;
+  device?: string;
+  role?: string;
+}
+
 export interface LogisticsLog {
   id: string;
   deliveryBoyName: string;

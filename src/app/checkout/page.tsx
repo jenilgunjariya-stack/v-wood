@@ -26,7 +26,7 @@ const UPI_APPS = [
 ];
 
 export default function CheckoutPage() {
-  const { cart, clearCart, addOrder, storeSettings, userBankName, userName, userEmail } = useStore();
+  const { cart, clearCart, addOrder, storeSettings, userBankName, userName, userEmail, userAddress, userPhone } = useStore();
   const isLoggedIn = userName !== "Guest";
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,7 +62,21 @@ export default function CheckoutPage() {
   useEffect(() => {
     setMounted(true);
     setIsMobile(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
-  }, []);
+    
+    // Auto-fill from store if logged in
+    if (userName !== "Guest") {
+      const names = userName.split(" ");
+      setFormData(prev => ({
+        ...prev,
+        firstName: names[0] || "",
+        lastName: names.slice(1).join(" ") || "",
+        email: userEmail || "",
+        phone: userPhone || "",
+        address: userAddress || "",
+        upiId: userBankName ? "" : prev.upiId // We don't have upiId in store, but we have bankName
+      }));
+    }
+  }, [userName, userEmail, userAddress, userPhone, userBankName]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;

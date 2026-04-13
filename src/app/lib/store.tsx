@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog, HelpRequest } from './types';
+import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog, HelpRequest, LoginLog } from './types';
 
 export interface StoreSettings {
   name: string;
@@ -107,12 +107,14 @@ interface StoreContextType {
   userEmail: string;
   userPhoto: string;
   userAddress: string;
+  userPhone: string;
   userBankName: string;
   isAdmin: boolean;
   isDelivery: boolean;
   searchQuery: string;
   storeSettings: StoreSettings;
   ratings: Rating[];
+  loginLogs: LoginLog[];
   addRating: (rating: Omit<Rating, 'id' | 'date'>) => void;
   getAverageRating: (productId: string) => number;
   getProductRatings: (productId: string) => Rating[];
@@ -130,6 +132,7 @@ interface StoreContextType {
   setUserEmail: (email: string) => void;
   setUserPhoto: (photo: string) => void;
   setUserAddress: (address: string) => void;
+  setUserPhone: (phone: string) => void;
   setUserBankName: (bankName: string) => void;
   setStoreSettings: (settings: StoreSettings) => void;
   login: (name: string, isAdminUser?: boolean, isDeliveryUser?: boolean) => void;
@@ -191,9 +194,10 @@ async function fetchServerStore(key: string) {
   return null;
 }
 
-async function saveServerStore(key: string, data: any) {
+async function saveServerStore(key: string, data: any, action?: 'add') {
   try {
-    await fetch(`/api/store?key=${key}`, {
+    const url = `/api/store?key=${key}${action ? `&action=${action}` : ''}`;
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -212,6 +216,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmailState] = useState<string>("");
   const [userPhoto, setUserPhotoState] = useState<string>("");
   const [userAddress, setUserAddressState] = useState("");
+  const [userPhone, setUserPhoneState] = useState("");
   const [userBankName, setUserBankNameState] = useState("");
   const [isAdmin, setIsAdminState] = useState(false);
   const [isDelivery, setIsDeliveryState] = useState(false);
@@ -221,8 +226,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [logisticsLogs, setLogisticsLogs] = useState<LogisticsLog[]>([]);
+  const [loginLogs, setLoginLogs] = useState<LoginLog[]>([]);
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
   const [isHydrated, setIsHydrated] = useState(false);
+
+  // Sync state across multiple tabs instantly (same browser)
+  const handleStorageChange = (e: StorageEvent) => {
+    if (!e.newValue) return;
+
+    try {
+      const value = JSON.parse(e.newValue);
+      switch (e.key) {
+        case 'timely_finds_settings': setStoreSettingsState(value); break;
+        case 'timely_finds_products': setProducts(value); break;
+        case 'timely_finds_orders': setOrders(value); break;
+        case 'timely_finds_employees': setEmployees(value); break;
+        case 'timely_finds_is_delivery': setIsDeliveryState(value === 'true'); break;
+        case 'timely_finds_favorites': setFavorites(value); break;
+        case 'timely_finds_ratings': setRatings(value); break;
+        case 'timely_finds_tasks': setTasks(value); break;
+        case 'timely_finds_logs': setLogisticsLogs(value); break;
+        case 'timely_finds_login_logs': setLoginLogs(value); break;
+        case 'timely_finds_help': setHelpRequests(value); break;
+      }
+    } catch (err) {
+      console.error("Storage sync failed", err);
+    }
+  };
 
   useEffect(() => {
     const savedCart = localStorage.getItem('timely_finds_cart');
@@ -251,6 +281,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const savedAddress = localStorage.getItem('timely_finds_user_address');
     if (savedAddress) setUserAddressState(savedAddress);
+
+    const savedPhone = localStorage.getItem('timely_finds_user_phone');
+    if (savedPhone) setUserPhoneState(savedPhone);
 
     const savedBank = localStorage.getItem('timely_finds_user_bank');
     if (savedBank) setUserBankNameState(savedBank);
@@ -293,6 +326,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try { setLogisticsLogs(JSON.parse(savedLogs)); } catch (e) { }
     }
 
+    const savedLoginLogs = localStorage.getItem('timely_finds_login_logs');
+    if (savedLoginLogs) {
+      try { setLoginLogs(JSON.parse(savedLoginLogs)); } catch (e) { }
+    }
+
     const savedHelp = localStorage.getItem('timely_finds_help');
     if (savedHelp) {
       try { setHelpRequests(JSON.parse(savedHelp)); } catch (e) { }
@@ -306,10 +344,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       fetchServerStore('employees'),
       fetchServerStore('tasks'),
       fetchServerStore('logs'),
+      fetchServerStore('login_logs'),
       fetchServerStore('ratings'),
       fetchServerStore('help'),
       fetchServerStore('profiles')
-    ]).then(([serverProducts, sOrders, sSettings, sEmployees, sTasks, sLogs, sRatings, sHelp, sProfiles]) => {
+    ]).then(([serverProducts, sOrders, sSettings, sEmployees, sTasks, sLogs, sLoginLogs, sRatings, sHelp, sProfiles]) => {
       if (serverProducts && serverProducts.length > 0) {
         setProducts(serverProducts);
         localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
@@ -360,11 +399,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       handleGlobalSync(sEmployees, 'timely_finds_employees', setEmployees);
       handleGlobalSync(sTasks, 'timely_finds_tasks', setTasks);
       handleGlobalSync(sLogs, 'timely_finds_logs', setLogisticsLogs);
+      handleGlobalSync(sLoginLogs, 'timely_finds_login_logs', setLoginLogs);
       handleGlobalSync(sRatings, 'timely_finds_ratings', setRatings);
       handleGlobalSync(sHelp, 'timely_finds_help', setHelpRequests);
 
       if (sProfiles) {
         localStorage.setItem('timely_finds_user_profiles', JSON.stringify(sProfiles));
+        
+        // 🌐 SYNC CURRENT USER: If we're already logged in, apply the latest profile from the server immediately
+        const currentEmail = localStorage.getItem('timely_finds_user_email');
+        if (currentEmail && sProfiles[currentEmail]) {
+          const profile = sProfiles[currentEmail];
+          if (profile.displayName) { setUserNameState(profile.displayName); localStorage.setItem('timely_finds_user_name', profile.displayName); }
+          if (profile.photo) { setUserPhotoState(profile.photo); localStorage.setItem('timely_finds_user_photo', profile.photo); }
+          if (profile.address) { setUserAddressState(profile.address); localStorage.setItem('timely_finds_user_address', profile.address); }
+          if (profile.phone) { setUserPhoneState(profile.phone); localStorage.setItem('timely_finds_user_phone', profile.phone); }
+          if (profile.bankName) { setUserBankNameState(profile.bankName); localStorage.setItem('timely_finds_user_bank', profile.bankName); }
+        }
       } else {
         const localStr = localStorage.getItem('timely_finds_user_profiles');
         if (localStr) {
@@ -375,44 +426,49 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setIsHydrated(true);
     });
 
-    // Poll server for product updates every 30 seconds (cross-device real-time sync)
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // 🌐 SHARED POLLING: Sync global data across all devices/locations
+  useEffect(() => {
+    if (!isHydrated) return;
+
     const pollInterval = setInterval(async () => {
+      // Products catalog sync (all users)
       const serverProducts = await fetchProductsFromServer();
       if (serverProducts && serverProducts.length > 0) {
         setProducts(serverProducts);
         localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
       }
-    }, 30000);
 
-    // Sync state across multiple tabs instantly (same browser)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (!e.newValue) return;
+      // Orders, Ratings, and Logs sync (critical for Admin Visibility)
+      // We poll more frequently for admins to ensure "Real-time" feel
+      Promise.all([
+        fetchServerStore('orders'),
+        fetchServerStore('ratings'),
+        fetchServerStore('logs'),
+        fetchServerStore('login_logs'),
+        fetchServerStore('help'),
+        fetchServerStore('tasks'),
+        fetchServerStore('settings')
+      ]).then(([sOrders, sRatings, sLogs, sLoginLogs, sHelp, sTasks, sSettings]) => {
+        if (sOrders) { setOrders(sOrders); localStorage.setItem('timely_finds_orders', JSON.stringify(sOrders)); }
+        if (sRatings) { setRatings(sRatings); localStorage.setItem('timely_finds_ratings', JSON.stringify(sRatings)); }
+        if (sLogs) { setLogisticsLogs(sLogs); localStorage.setItem('timely_finds_logs', JSON.stringify(sLogs)); }
+        if (sLoginLogs) { setLoginLogs(sLoginLogs); localStorage.setItem('timely_finds_login_logs', JSON.stringify(sLoginLogs)); }
+        if (sHelp) { setHelpRequests(sHelp); localStorage.setItem('timely_finds_help', JSON.stringify(sHelp)); }
+        if (sTasks) { setTasks(sTasks); localStorage.setItem('timely_finds_tasks', JSON.stringify(sTasks)); }
+        if (sSettings) { setStoreSettingsState(sSettings); localStorage.setItem('timely_finds_settings', JSON.stringify(sSettings)); }
+      });
+    }, isAdmin ? 10000 : 30000); // 10s for admin, 30s for shoppers
 
-      try {
-        const value = JSON.parse(e.newValue);
-        switch (e.key) {
-          case 'timely_finds_settings': setStoreSettingsState(value); break;
-          case 'timely_finds_products': setProducts(value); break;
-          case 'timely_finds_orders': setOrders(value); break;
-          case 'timely_finds_employees': setEmployees(value); break;
-          case 'timely_finds_is_delivery': setIsDeliveryState(value === 'true'); break;
-          case 'timely_finds_favorites': setFavorites(value); break;
-          case 'timely_finds_ratings': setRatings(value); break;
-          case 'timely_finds_tasks': setTasks(value); break;
-          case 'timely_finds_logs': setLogisticsLogs(value); break;
-          case 'timely_finds_help': setHelpRequests(value); break;
-        }
-      } catch (err) {
-        console.error("Storage sync failed", err);
-      }
-    };
+    return () => clearInterval(pollInterval);
+  }, [isAdmin, isHydrated]);
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(pollInterval);
-    };
-  }, []);
+
 
   const saveCart = (newCart: CartItem[]) => {
     setCart(newCart);
@@ -453,7 +509,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const newOrders = [order, ...orders];
     setOrders(newOrders);
     localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
-    saveServerStore('orders', newOrders);
+    
+    // 🚀 CENTRALIZED: Save just the NEW order to the server using 'add' action
+    // This prevents overwriting other users' orders placed at the same time
+    saveServerStore('orders', order, 'add');
 
     const updatedProducts = products.map(p => {
       const orderItem = order.items.find(item => item.id === p.id);
@@ -615,14 +674,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   };
 
   /** Save active user profile to server + localStorage immediately (called on every profile field change) */
-  const persistUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
+  const persistUserProfile = (name: string, email: string, photo: string, address: string, phone: string, bankName: string) => {
     const key = email || name;
     if (!key || key === 'Guest') return;
     try {
       const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
-      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
+      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; phone: string; bankName: string }> =
         profilesRaw ? JSON.parse(profilesRaw) : {};
-      profiles[key] = { displayName: name, email, photo, address, bankName };
+      profiles[key] = { displayName: name, email, photo, address, phone, bankName };
       localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
       saveServerStore('profiles', profiles);
     } catch (e) { }
@@ -631,7 +690,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUserName = (name: string) => {
     setUserNameState(name);
     localStorage.setItem('timely_finds_user_name', name);
-    persistUserProfile(name, userEmail, userPhoto, userAddress, userBankName);
+    persistUserProfile(name, userEmail, userPhoto, userAddress, userPhone, userBankName);
   };
 
   const setUserEmail = (email: string) => {
@@ -642,19 +701,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setUserPhoto = (photo: string) => {
     setUserPhotoState(photo);
     localStorage.setItem('timely_finds_user_photo', photo);
-    persistUserProfile(userName, userEmail, photo, userAddress, userBankName);
+    persistUserProfile(userName, userEmail, photo, userAddress, userPhone, userBankName);
   };
 
   const setUserAddress = (address: string) => {
     setUserAddressState(address);
     localStorage.setItem('timely_finds_user_address', address);
-    persistUserProfile(userName, userEmail, userPhoto, address, userBankName);
+    persistUserProfile(userName, userEmail, userPhoto, address, userPhone, userBankName);
+  };
+
+  const setUserPhone = (phone: string) => {
+    setUserPhoneState(phone);
+    localStorage.setItem('timely_finds_user_phone', phone);
+    persistUserProfile(userName, userEmail, userPhoto, userAddress, phone, userBankName);
   };
 
   const setUserBankName = (bankName: string) => {
     setUserBankNameState(bankName);
     localStorage.setItem('timely_finds_user_bank', bankName);
-    persistUserProfile(userName, userEmail, userPhoto, userAddress, bankName);
+    persistUserProfile(userName, userEmail, userPhoto, userAddress, userPhone, bankName);
   };
 
   const setStoreSettings = (settings: StoreSettings) => {
@@ -670,35 +735,39 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('timely_finds_is_delivery', isDeliveryUser.toString());
 
     const applyProfile = (profiles: Record<string, any>) => {
-      const saved = profiles[email];
+      const saved = profiles ? profiles[email] : undefined;
       if (saved) {
         const displayName = saved.displayName || email;
         setUserNameState(displayName);
         setUserEmailState(email);
         setUserPhotoState(saved.photo || "");
         setUserAddressState(saved.address || "");
+        setUserPhoneState(saved.phone || "");
         setUserBankNameState(saved.bankName || "");
         localStorage.setItem('timely_finds_user_name', displayName);
         localStorage.setItem('timely_finds_user_email', email);
         localStorage.setItem('timely_finds_user_photo', saved.photo || "");
         localStorage.setItem('timely_finds_user_address', saved.address || "");
+        localStorage.setItem('timely_finds_user_phone', saved.phone || "");
         localStorage.setItem('timely_finds_user_bank', saved.bankName || "");
       } else {
         setUserNameState(email);
         setUserEmailState(email);
         setUserPhotoState("");
         setUserAddressState("");
+        setUserPhoneState("");
         setUserBankNameState("");
         localStorage.setItem('timely_finds_user_name', email);
         localStorage.setItem('timely_finds_user_email', email);
         localStorage.setItem('timely_finds_user_photo', "");
         localStorage.setItem('timely_finds_user_address', "");
+        localStorage.setItem('timely_finds_user_phone', "");
         localStorage.setItem('timely_finds_user_bank', "");
       }
     };
 
     // Fetch profiles from server first (cross-device), fall back to localStorage
-    fetchServerStore('profiles').then((serverProfiles) => {
+    return fetchServerStore('profiles').then((serverProfiles) => {
       if (serverProfiles && serverProfiles[email]) {
         // Server has this user's data — merge into localStorage too
         const localRaw = localStorage.getItem('timely_finds_user_profiles');
@@ -719,18 +788,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           localStorage.setItem('timely_finds_user_email', email);
         }
       }
+
+      // 📝 Record Login Log
+      const newLog: LoginLog = {
+        id: `LOG-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        email: email,
+        timestamp: new Date().toLocaleString('en-IN', {
+          day: '2-digit', month: 'short', year: 'numeric', 
+          hour: '2-digit', minute: '2-digit', second: '2-digit'
+        }),
+        role: isAdminUser ? 'Admin' : (isDeliveryUser ? 'Delivery' : 'Customer'),
+        device: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'Unknown'
+      };
+      
+      setLoginLogs(prev => {
+        const updated = [newLog, ...prev];
+        localStorage.setItem('timely_finds_login_logs', JSON.stringify(updated));
+        saveServerStore('login_logs', updated);
+        return updated;
+      });
     });
   };
 
   /** Persist current user's profile keyed by their EMAIL to server + localStorage */
-  const saveCurrentUserProfile = (name: string, email: string, photo: string, address: string, bankName: string) => {
+  const saveCurrentUserProfile = (name: string, email: string, photo: string, address: string, phone: string, bankName: string) => {
     const key = email || name;
     if (!key || key === 'Guest') return;
     try {
       const profilesRaw = localStorage.getItem('timely_finds_user_profiles');
-      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; bankName: string }> =
+      const profiles: Record<string, { displayName: string; email: string; photo: string; address: string; phone: string; bankName: string }> =
         profilesRaw ? JSON.parse(profilesRaw) : {};
-      profiles[key] = { displayName: name, email, photo, address, bankName };
+      profiles[key] = { displayName: name, email, photo, address, phone, bankName };
       localStorage.setItem('timely_finds_user_profiles', JSON.stringify(profiles));
       saveServerStore('profiles', profiles); // 🌐 push to server for cross-device access
     } catch (e) { }
@@ -738,12 +826,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     // Save current profile data indexed by username before clearing
-    saveCurrentUserProfile(userName, userEmail, userPhoto, userAddress, userBankName);
+    saveCurrentUserProfile(userName, userEmail, userPhoto, userAddress, userPhone, userBankName);
 
     setUserNameState("Guest");
     setUserEmailState("");
     setUserPhotoState("");
     setUserAddressState("");
+    setUserPhoneState("");
     setUserBankNameState("");
     setIsAdminState(false);
     setIsDeliveryState(false);
@@ -751,6 +840,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('timely_finds_user_email');
     localStorage.removeItem('timely_finds_user_photo');
     localStorage.removeItem('timely_finds_user_address');
+    localStorage.removeItem('timely_finds_user_phone');
     localStorage.removeItem('timely_finds_user_bank');
     localStorage.removeItem('timely_finds_is_admin');
     localStorage.removeItem('timely_finds_is_delivery');
@@ -868,12 +958,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, userBankName, isAdmin, isDelivery, searchQuery, storeSettings,
+      products, cart, orders, employees, userName, userEmail, userPhoto, userAddress, userPhone, userBankName, isAdmin, isDelivery, searchQuery, storeSettings,
       setSearchQuery, addToCart, removeFromCart, updateQuantity, clearCart,
-      addOrder, updateOrderStatus, cancelOrder, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserBankName, setStoreSettings,
+      addOrder, updateOrderStatus, cancelOrder, updateProducts, setUserName, setUserEmail, setUserPhoto, setUserAddress, setUserPhone, setUserBankName, setStoreSettings,
       login, logout, updateEmployeeStatus, payAllEmployees, addEmployee, updateEmployee, removeEmployee, resetPayroll, updateAttendance,
       favorites, toggleFavorite, isFavorite, ratings, addRating, getAverageRating, getProductRatings, getUserRating,
       tasks, addTask, updateTaskStatus, updateTask, removeTask, logisticsLogs,
+      loginLogs,
       helpRequests, addHelpRequest, updateHelpRequestStatus, removeHelpRequest
     }}>
       {children}

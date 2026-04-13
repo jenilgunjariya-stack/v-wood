@@ -11,12 +11,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { LogIn, Mail, Lock, ArrowRight, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import Image from "next/image";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login, storeSettings } = useStore();
+  const { login, setUserName, setUserPhoto, storeSettings } = useStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
@@ -51,27 +53,75 @@ function LoginContent() {
     const isDelivery = password === "12345";
 
     // Use email as the unique user identifier
-    login(trimmedEmail, isAdmin, isDelivery);
+    login(trimmedEmail, isAdmin, isDelivery).then(() => {
+      if (isAdmin) {
+        toast({
+          title: "Admin Access Granted",
+          description: `Welcome back. Dashboard access enabled.`,
+        });
+        router.push("/admin");
+      } else if (isDelivery) {
+        toast({
+          title: "Logistics Access Granted",
+          description: `Welcome back. Fulfillment dashboard ready.`,
+        });
+        router.push("/delivery");
+      } else {
+        toast({
+          title: "Welcome!",
+          description: `Successfully signed in as ${trimmedEmail}.`,
+        });
+        // Redirect to original destination (e.g. /checkout) or home
+        router.push(redirectTo);
+      }
+    });
+  };
 
-    if (isAdmin) {
+  const handleGoogleLogin = async () => {
+    if (!auth || !googleProvider) {
       toast({
-        title: "Admin Access Granted",
-        description: `Welcome back. Dashboard access enabled.`,
+        variant: "destructive",
+        title: "Google Login Unavailable",
+        description: "Please configure Firebase environment variables to enable Google authentication.",
       });
-      router.push("/admin");
-    } else if (isDelivery) {
+      return;
+    }
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      if (user.email) {
+        // Use email as the unique user identifier - WAIT for it to finish sync
+        await login(user.email, false, false);
+        
+        // Sync profile details IF they are missing from the server-fetched profile
+        // We check current state after login finishes
+        if (user.displayName) setUserName(user.displayName);
+        if (user.photoURL) setUserPhoto(user.photoURL);
+        
+        toast({
+          title: "Welcome!",
+          description: `Successfully signed in as ${user.displayName || user.email}.`,
+        });
+        
+        // Redirect to original destination (e.g. /checkout) or home
+        router.push(redirectTo);
+      }
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      
+      // Provide more helpful error for common issues
+      let errorMessage = "Failed to sign in with Google.";
+      if (error.code === 'auth/configuration-not-found') {
+        errorMessage = "Google login is not configured. Please set up Firebase environment variables.";
+      }
+
       toast({
-        title: "Logistics Access Granted",
-        description: `Welcome back. Fulfillment dashboard ready.`,
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message || errorMessage,
       });
-      router.push("/delivery");
-    } else {
-      toast({
-        title: "Welcome!",
-        description: `Successfully signed in as ${trimmedEmail}.`,
-      });
-      // Redirect to original destination (e.g. /checkout) or home
-      router.push(redirectTo);
     }
   };
 
@@ -173,6 +223,42 @@ function LoginContent() {
                 >
                   Continue to Store
                   <ArrowRight className="ml-3 h-6 w-6 transition-transform group-hover:translate-x-2" />
+                </Button>
+
+                <div className="relative my-8">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-muted/50" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-4 text-muted-foreground font-bold tracking-widest rounded-full">Or continue with</span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleGoogleLogin}
+                  className="w-full h-16 text-lg font-bold border-2 rounded-[1.25rem] hover:bg-muted/50 transition-all flex items-center justify-center gap-3 active:scale-[0.98] border-muted/20"
+                >
+                  <svg className="h-6 w-6" viewBox="0 0 24 24">
+                    <path
+                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  Sign in with Google
                 </Button>
               </form>
             </CardContent>
