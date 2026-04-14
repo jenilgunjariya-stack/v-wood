@@ -1,4 +1,4 @@
-"use client";
+
 
 import { Navbar } from "@/components/layout/Navbar";
 import { useStore } from "@/app/lib/store";
