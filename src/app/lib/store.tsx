@@ -186,8 +186,7 @@ async function saveProductsToServer(products: Clock[]) {
 
 async function fetchServerStore(key: string) {
   try {
-    const endpoint = key === 'orders' ? '/api/orders' : `/api/store?key=${key}`;
-    const res = await fetch(endpoint, { cache: 'no-store' });
+    const res = await fetch(`/api/store?key=${key}`, { cache: 'no-store' });
     if (res.ok) return await res.json();
   } catch (e) {
     console.warn(`Could not fetch ${key} from server:`, e);
@@ -197,8 +196,8 @@ async function fetchServerStore(key: string) {
 
 async function saveServerStore(key: string, data: any, action?: 'add') {
   try {
-    const endpoint = key === 'orders' ? '/api/orders' : `/api/store?key=${key}${action ? `&action=${action}` : ''}`;
-    await fetch(endpoint, {
+    const url = `/api/store?key=${key}${action ? `&action=${action}` : ''}`;
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
