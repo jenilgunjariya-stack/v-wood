@@ -27,7 +27,7 @@ export default function Home() {
     return () => clearInterval(timer);
   }, []);
 
-  const inStockProducts = products; // Show all products, even if out of stock
+  const inStockProducts = products.filter(p => p.stock > 0);
   const filteredProducts = inStockProducts.filter(clock => {
     const matchesSearch = clock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          clock.description.toLowerCase().includes(searchQuery.toLowerCase()) ||

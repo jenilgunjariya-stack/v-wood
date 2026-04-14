@@ -50,7 +50,7 @@ export default function FavoritesPage() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {favorites.map((product) => (
+          {favorites.filter(p => p.stock > 0).map((product) => (
             <ClockCard key={product.id} clock={product} />
           ))}
         </div>

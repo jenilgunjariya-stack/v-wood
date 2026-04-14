@@ -742,87 +742,87 @@ export default function AdminPage() {
             </div>
           )}
           {activeTab === 'logins' && (
-             <div className="animate-in fade-in duration-500 space-y-12">
-               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                 <div>
-                   <h1 className="text-5xl font-headline font-bold text-primary">Login Information</h1>
-                   <p className="text-muted-foreground mt-2 text-lg">Registry of all authentication events across the platform.</p>
-                 </div>
-                 <div className="flex gap-4">
-                    <Card className="bg-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Logins</p>
-                      <p className="text-4xl font-headline font-bold text-primary">{loginLogs.length}</p>
-                    </Card>
-                    <Card className="bg-primary text-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
-                      <p className="text-[10px] font-bold text-accent uppercase tracking-widest mb-1">Unique Users</p>
-                      <p className="text-4xl font-headline font-bold">{new Set(loginLogs.map(l => l.email)).size}</p>
-                    </Card>
-                 </div>
-               </div>
+            <div className="animate-in fade-in duration-500 space-y-12">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+                <div>
+                  <h1 className="text-5xl font-headline font-bold text-primary">Login Information</h1>
+                  <p className="text-muted-foreground mt-2 text-lg">Registry of all authentication events across the platform.</p>
+                </div>
+                <div className="flex gap-4">
+                  <Card className="bg-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Total Logins</p>
+                    <p className="text-4xl font-headline font-bold text-primary">{loginLogs.length}</p>
+                  </Card>
+                  <Card className="bg-primary text-white border-none shadow-xl px-10 py-6 text-center rounded-[2rem]">
+                    <p className="text-[10px] font-bold text-accent uppercase tracking-widest mb-1">Unique Users</p>
+                    <p className="text-4xl font-headline font-bold">{new Set(loginLogs.map(l => l.email)).size}</p>
+                  </Card>
+                </div>
+              </div>
 
-               <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
-                 <CardHeader className="bg-muted/30 p-10 border-b">
-                   <div className="flex items-center justify-between">
-                     <CardTitle className="font-headline text-2xl flex items-center gap-3">
-                       <LayoutList className="h-6 w-6 text-accent" /> Login Session Registry
-                     </CardTitle>
-                   </div>
-                 </CardHeader>
-                 <CardContent className="p-0">
-                   <ScrollArea className="w-full">
-                     <Table>
-                       <TableHeader className="bg-muted/50">
-                         <TableRow className="h-20 hover:bg-transparent border-none">
-                           <TableHead className="pl-10 font-bold uppercase tracking-widest text-[10px]">User Identity</TableHead>
-                           <TableHead className="font-bold uppercase tracking-widest text-[10px]">Authentication Time</TableHead>
-                           <TableHead className="font-bold uppercase tracking-widest text-[10px]">Role</TableHead>
-                           <TableHead className="pr-10 font-bold uppercase tracking-widest text-[10px]">Device Fingerprint</TableHead>
-                         </TableRow>
-                       </TableHeader>
-                       <TableBody>
-                         {loginLogs.length === 0 ? (
-                           <TableRow className="h-40">
-                             <TableCell colSpan={4} className="text-center italic text-muted-foreground">No login events recorded in the registry.</TableCell>
-                           </TableRow>
-                         ) : (
-                           loginLogs.map((log) => (
-                             <TableRow key={log.id} className="h-24 hover:bg-muted/10 transition-colors border-muted/5">
-                               <TableCell className="pl-10">
-                                 <div className="flex items-center gap-4">
-                                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                     {log.email[0].toUpperCase()}
-                                   </div>
-                                   <div>
-                                     <p className="font-bold text-primary">{log.email}</p>
-                                     <p className="text-[10px] text-muted-foreground font-mono">{log.id}</p>
-                                   </div>
-                                 </div>
-                               </TableCell>
-                               <TableCell className="font-medium text-muted-foreground">{log.timestamp}</TableCell>
-                               <TableCell>
-                                 <Badge className={cn(
-                                   "font-bold uppercase tracking-tighter px-3 h-6",
-                                   log.role === 'Admin' ? "bg-red-500" : (log.role === 'Delivery' ? "bg-blue-500" : "bg-green-500")
-                                 )}>
-                                   {log.role}
-                                 </Badge>
-                               </TableCell>
-                               <TableCell className="pr-10">
-                                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                   <Smartphone className="h-3 w-3" />
-                                   <span className="truncate max-w-[200px]">{log.device || 'Web Browser'}</span>
-                                 </div>
-                               </TableCell>
-                             </TableRow>
-                           ))
-                         )}
-                       </TableBody>
-                     </Table>
-                     <ScrollBar orientation="horizontal" />
-                   </ScrollArea>
-                 </CardContent>
-               </Card>
-             </div>
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-white">
+                <CardHeader className="bg-muted/30 p-10 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-headline text-2xl flex items-center gap-3">
+                      <LayoutList className="h-6 w-6 text-accent" /> Login Session Registry
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="w-full">
+                    <Table>
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="h-20 hover:bg-transparent border-none">
+                          <TableHead className="pl-10 font-bold uppercase tracking-widest text-[10px]">User Identity</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Authentication Time</TableHead>
+                          <TableHead className="font-bold uppercase tracking-widest text-[10px]">Role</TableHead>
+                          <TableHead className="pr-10 font-bold uppercase tracking-widest text-[10px]">Device Fingerprint</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {loginLogs.length === 0 ? (
+                          <TableRow className="h-40">
+                            <TableCell colSpan={4} className="text-center italic text-muted-foreground">No login events recorded in the registry.</TableCell>
+                          </TableRow>
+                        ) : (
+                          loginLogs.map((log) => (
+                            <TableRow key={log.id} className="h-24 hover:bg-muted/10 transition-colors border-muted/5">
+                              <TableCell className="pl-10">
+                                <div className="flex items-center gap-4">
+                                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                    {log.email[0].toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-primary">{log.email}</p>
+                                    <p className="text-[10px] text-muted-foreground font-mono">{log.id}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="font-medium text-muted-foreground">{log.timestamp}</TableCell>
+                              <TableCell>
+                                <Badge className={cn(
+                                  "font-bold uppercase tracking-tighter px-3 h-6",
+                                  log.role === 'Admin' ? "bg-red-500" : (log.role === 'Delivery' ? "bg-blue-500" : "bg-green-500")
+                                )}>
+                                  {log.role}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="pr-10">
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <Smartphone className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">{log.device || 'Web Browser'}</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
           )}
           {activeTab === 'products' && (
             <div className="animate-in fade-in duration-500">
