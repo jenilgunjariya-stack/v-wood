@@ -85,10 +85,10 @@ export function Navbar() {
   };
 
   const ShoppingOptions = [
-    { name: "Wall Clock", icon: Clock, href: "/#collection" },
-    { name: "Alarm Clock", icon: AlarmClock, href: "/#collection" },
-    { name: "Hand Watch", icon: Watch, href: "/#collection" },
-    { name: "Photo Frame", icon: ImageIcon, href: "/#collection" },
+    { name: "Wall Clock", icon: Clock, href: "/?category=Wall Clock#collection" },
+    { name: "Alarm Clock", icon: AlarmClock, href: "/?category=Alarm Clock#collection" },
+    { name: "Hand Watch", icon: Watch, href: "/?category=Hand Watch#collection" },
+    { name: "Photo Frame", icon: ImageIcon, href: "/?category=Photo Frame#collection" },
   ];
 
   const NavLinks = () => {

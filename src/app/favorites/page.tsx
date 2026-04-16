@@ -1,4 +1,4 @@
-
+"use client";
 
 import { Navbar } from "@/components/layout/Navbar";
 import { useStore } from "@/app/lib/store";
@@ -51,7 +51,7 @@ export default function FavoritesPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {favorites.filter(p => p.stock > 0).map((product) => (
-            <ClockCard key={product.id} clock={product} />
+            <ClockCard key={product.id} clock={product} isFavoriteView={true} />
           ))}
         </div>
         

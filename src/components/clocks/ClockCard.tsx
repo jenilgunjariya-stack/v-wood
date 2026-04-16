@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Plus, Tag, Truck, Star } from "lucide-react";
+import { Heart, Plus, Tag, Truck, Star, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Clock } from "@/app/lib/types";
@@ -11,7 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export function ClockCard({ clock }: { clock: Clock }) {
+export function ClockCard({ clock, isFavoriteView }: { clock: Clock; isFavoriteView?: boolean }) {
   const { addToCart, toggleFavorite, isFavorite, addRating, getAverageRating, getProductRatings, getUserRating, userName, userPhoto } = useStore();
   const [hoverRating, setHoverRating] = useState(0);
   const avgRating = getAverageRating(clock.id);
@@ -68,6 +68,18 @@ export function ClockCard({ clock }: { clock: Clock }) {
         >
           <Heart className={`h-6 w-6 transition-transform duration-500 ${isFav ? "scale-110" : "scale-100"}`} />
         </Button>
+
+        {isFavoriteView && (
+          <Button 
+            variant="destructive" 
+            size="icon" 
+            className="h-10 w-10 rounded-full shadow-xl animate-in zoom-in duration-300"
+            onClick={handleToggleFavorite}
+            title="Remove from Favorites"
+          >
+            <Minus className="h-5 w-5" />
+          </Button>
+        )}
         
         {hasDiscount && !isOutOfStock && (
           <div className="animate-in fade-in slide-in-from-right-4 duration-500">

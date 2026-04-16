@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { ClockCard } from "@/components/clocks/ClockCard";
 import { useStore } from "@/app/lib/store";
@@ -13,11 +14,21 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-export default function Home() {
+function HomeContent() {
   const { products, searchQuery, setSearchQuery, storeSettings, userName, userPhoto } = useStore();
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get('category');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>("");
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    } else {
+      setSelectedCategory(null);
+    }
+  }, [categoryParam]);
 
   useEffect(() => {
     setMounted(true);
@@ -465,5 +476,12 @@ export default function Home() {
         </div>
       </footer>
     </div>
+  );
+}
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center font-bold uppercase tracking-[0.3em] text-accent">Curating Timepieces...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

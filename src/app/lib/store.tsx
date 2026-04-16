@@ -2,6 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Clock, CartItem, Order, Employee, Rating, Task, LogisticsLog, HelpRequest, LoginLog } from './types';
+import { db } from "@/lib/firebase";
+import { collection, doc, onSnapshot, setDoc, updateDoc, addDoc, query, orderBy, limit, getDoc, getDocs } from "firebase/firestore";
+import { toast } from "@/hooks/use-toast";
 
 export interface StoreSettings {
   name: string;
@@ -135,7 +138,7 @@ interface StoreContextType {
   setUserPhone: (phone: string) => void;
   setUserBankName: (bankName: string) => void;
   setStoreSettings: (settings: StoreSettings) => void;
-  login: (name: string, isAdminUser?: boolean, isDeliveryUser?: boolean) => void;
+  login: (name: string, isAdminUser?: boolean, isDeliveryUser?: boolean) => Promise<void>;
   logout: () => void;
   updateEmployeeStatus: (empId: string, status: Employee['paymentStatus']) => void;
   payAllEmployees: () => void;
@@ -145,7 +148,7 @@ interface StoreContextType {
   resetPayroll: () => void;
   updateAttendance: (empId: string, date: string, status: any) => void;
   favorites: Clock[];
-  toggleFavorite: (product: Clock) => void;
+  toggleFavorite: (product: Clock) => Promise<void>;
   isFavorite: (id: string) => boolean;
   tasks: Task[];
   addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
@@ -436,37 +439,123 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isHydrated) return;
 
-    const pollInterval = setInterval(async () => {
-      // Products catalog sync (all users)
-      const serverProducts = await fetchProductsFromServer();
-      if (serverProducts && serverProducts.length > 0) {
-        setProducts(serverProducts);
-        localStorage.setItem('timely_finds_products', JSON.stringify(serverProducts));
+    // 1. Listen for Orders in Real-Time
+    const ordersQuery = query(collection(db, "orders"), orderBy("date", "desc"));
+    const unsubOrders = onSnapshot(ordersQuery, (snapshot) => {
+      const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+      
+      // Real-time Notification logic
+      if (isAdmin && orders.length > 0 && newOrders.length > orders.length) {
+        const latestOrder = newOrders[0];
+        if (latestOrder.id !== orders[0]?.id) {
+          // triggerOrderNotification(latestOrder); // Assuming this helper exists
+        }
       }
+      
+      setOrders(newOrders);
+      localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
+    });
 
-      // Orders, Ratings, and Logs sync (critical for Admin Visibility)
-      // We poll more frequently for admins to ensure "Real-time" feel
-      Promise.all([
-        fetchServerStore('orders'),
-        fetchServerStore('ratings'),
-        fetchServerStore('logs'),
-        fetchServerStore('login_logs'),
-        fetchServerStore('help'),
-        fetchServerStore('tasks'),
-        fetchServerStore('settings')
-      ]).then(([sOrders, sRatings, sLogs, sLoginLogs, sHelp, sTasks, sSettings]) => {
-        if (sOrders) { setOrders(sOrders); localStorage.setItem('timely_finds_orders', JSON.stringify(sOrders)); }
-        if (sRatings) { setRatings(sRatings); localStorage.setItem('timely_finds_ratings', JSON.stringify(sRatings)); }
-        if (sLogs) { setLogisticsLogs(sLogs); localStorage.setItem('timely_finds_logs', JSON.stringify(sLogs)); }
-        if (sLoginLogs) { setLoginLogs(sLoginLogs); localStorage.setItem('timely_finds_login_logs', JSON.stringify(sLoginLogs)); }
-        if (sHelp) { setHelpRequests(sHelp); localStorage.setItem('timely_finds_help', JSON.stringify(sHelp)); }
-        if (sTasks) { setTasks(sTasks); localStorage.setItem('timely_finds_tasks', JSON.stringify(sTasks)); }
-        if (sSettings) { setStoreSettingsState(sSettings); localStorage.setItem('timely_finds_settings', JSON.stringify(sSettings)); }
+    // 2. Listen for Products
+    const unsubProducts = onSnapshot(collection(db, "products"), (snapshot) => {
+      const newProducts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Clock));
+      setProducts(newProducts);
+      localStorage.setItem('timely_finds_products', JSON.stringify(newProducts));
+    });
+
+    // 3. Listen for Favorites (Synced globally per user)
+    let unsubFavs: (() => void) | undefined;
+    if (userEmail && userEmail !== 'Guest') {
+      unsubFavs = onSnapshot(doc(db, "users", userEmail), (snapshot) => {
+        const data = snapshot.data();
+        if (data && data.favorites) {
+          setFavorites(data.favorites);
+          localStorage.setItem('timely_finds_favorites', JSON.stringify(data.favorites));
+        }
       });
-    }, isAdmin ? 10000 : 30000); // 10s for admin, 30s for shoppers
+    }
 
-    return () => clearInterval(pollInterval);
-  }, [isAdmin, isHydrated]);
+    // 4. Listen for Settings
+    const unsubSettings = onSnapshot(doc(db, "settings", "global"), (snapshot) => {
+      const data = snapshot.data();
+      if (data) {
+        setStoreSettingsState(data as StoreSettings);
+        localStorage.setItem('timely_finds_settings', JSON.stringify(data));
+      }
+    });
+
+    // 5. Listen for Employees
+    const unsubEmployees = onSnapshot(collection(db, "employees"), (snapshot) => {
+      const newEmployees = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+      setEmployees(newEmployees);
+      localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
+    });
+
+    // 6. Listen for Ratings
+    const unsubRatings = onSnapshot(collection(db, "ratings"), (snapshot) => {
+      const newRatings = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Rating));
+      setRatings(newRatings);
+      localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
+    });
+
+    // 7. Listen for Tasks (Admin/Employees)
+    const unsubTasks = onSnapshot(collection(db, "tasks"), (snapshot) => {
+      const newTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+      setTasks(newTasks);
+      localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
+    });
+
+    // 8. Listen for Logistics Logs
+    const unsubLogs = onSnapshot(collection(db, "logs"), (snapshot) => {
+      const newLogs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LogisticsLog));
+      setLogisticsLogs(newLogs);
+      localStorage.setItem('timely_finds_logs', JSON.stringify(newLogs));
+    });
+
+    // 9. Listen for Help Requests
+    const unsubHelp = onSnapshot(collection(db, "help"), (snapshot) => {
+      const newHelp = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as HelpRequest));
+      setHelpRequests(newHelp);
+      localStorage.setItem('timely_finds_help', JSON.stringify(newHelp));
+    });
+
+    return () => {
+      unsubOrders();
+      unsubProducts();
+      unsubSettings();
+      unsubEmployees();
+      unsubRatings();
+      unsubTasks();
+      unsubLogs();
+      unsubHelp();
+      if (typeof unsubFavs === 'function') unsubFavs();
+    };
+  }, [isAdmin, userEmail, isHydrated]);
+
+  // Helper for real-time alerts
+  const triggerOrderNotification = (order: Order) => {
+    // 1. Play Sound (if allowed)
+    try {
+      const audio = new Audio('/chime.mp3');
+      audio.play().catch(() => console.log('Audio autoplay blocked by browser. User interaction required first.'));
+    } catch (e) {
+      console.log('Audio not supported or missing.');
+    }
+
+    // 2. Browser Alert (Permissions checked on Admin page)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('V-WOOD: New Order!', {
+        body: `Order #${order.id} from ${order.customerName} for RS. ${order.total.toLocaleString()}`,
+        icon: '/favicon.ico'
+      });
+    }
+
+    // 3. UI Toast
+    toast({
+      title: "New Order Detected!",
+      description: `Order #${order.id} from ${order.customerName} has arrived in real-time.`,
+    });
+  };
 
 
 
@@ -505,23 +594,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => saveCart([]);
 
-  const addOrder = (order: Order) => {
-    const newOrders = [order, ...orders];
-    setOrders(newOrders);
-    localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
-    
-    // 🚀 CENTRALIZED: Save just the NEW order to the server using 'add' action
-    // This prevents overwriting other users' orders placed at the same time
-    saveServerStore('orders', order, 'add');
-
-    const updatedProducts = products.map(p => {
-      const orderItem = order.items.find(item => item.id === p.id);
-      if (orderItem) {
-        return { ...p, stock: Math.max(0, p.stock - orderItem.quantity) };
-      }
-      return p;
-    });
-    updateProducts(updatedProducts);
+  const addOrder = async (order: Order) => {
+    try {
+      // 🚀 CENTRALIZED: Save to Firestore
+      await setDoc(doc(db, "orders", order.id), order);
+      
+      const updatedProducts = products.map(p => {
+        const orderItem = order.items.find(item => item.id === p.id);
+        if (orderItem) {
+          return { ...p, stock: Math.max(0, p.stock - orderItem.quantity) };
+        }
+        return p;
+      });
+      updateProducts(updatedProducts);
+    } catch (error) {
+      console.error("Error adding order to Firestore:", error);
+      toast({ variant: "destructive", title: "Order Sync Failed", description: "Your order was placed but could not be synced to the cloud." });
+    }
   };
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
@@ -548,51 +637,48 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveServerStore('logs', updatedLogs);
   };
 
-  const cancelOrder = (orderId: string) => {
+  const cancelOrder = async (orderId: string) => {
     const orderToCancel = orders.find(o => o.id === orderId);
     if (!orderToCancel || orderToCancel.status === 'Cancelled' || orderToCancel.status === 'Shipped' || orderToCancel.status === 'Delivered') return;
 
-    // 1. Update Order Status
-    const newOrders = orders.map(o => o.id === orderId ? { ...o, status: 'Cancelled' as const } : o);
-    setOrders(newOrders);
-    localStorage.setItem('timely_finds_orders', JSON.stringify(newOrders));
-    saveServerStore('orders', newOrders);
+    try {
+      // 1. Update Order Status in Firestore
+      await updateDoc(doc(db, "orders", orderId), { status: 'Cancelled' });
 
-    // 2. Restore Stock
-    const updatedProducts = products.map(p => {
-      const orderItem = orderToCancel.items.find(item => item.id === p.id);
-      if (orderItem) {
-        return { ...p, stock: p.stock + orderItem.quantity };
-      }
-      return p;
-    });
-    updateProducts(updatedProducts);
-
-    // 3. Notify Admin (Simulation)
-    console.log(`[ADMIN NOTIFICATION]: Order ${orderId} has been CANCELLED by the customer.`);
+      // 2. Restore Stock in Firestore
+      const updatedProducts = products.map(p => {
+        const orderItem = orderToCancel.items.find(item => item.id === p.id);
+        if (orderItem) {
+          return { ...p, stock: p.stock + orderItem.quantity };
+        }
+        return p;
+      });
+      updateProducts(updatedProducts);
+    } catch (error) {
+      console.error("Error cancelling order in Firestore:", error);
+    }
   };
 
-  const updateProducts = (newProducts: Clock[]) => {
-    setProducts(newProducts);
-    localStorage.setItem('timely_finds_products', JSON.stringify(newProducts));
-    // 🌐 Save to server so ALL users see the updated catalog
-    saveProductsToServer(newProducts);
+  const updateProducts = async (newProducts: Clock[]) => {
+    try {
+      // 🌐 Batch update or individual updates for products in Firestore
+      // For simplicity and to avoid large writes, we'll update the whole products state 
+      // which triggers the snapshot listener for all clients.
+      const productsRef = collection(db, "products");
+      for (const product of newProducts) {
+        await setDoc(doc(productsRef, product.id), product);
+      }
+    } catch (error) {
+      console.error("Error updating products in Firestore:", error);
+    }
   };
 
-  const updateEmployeeStatus = (empId: string, status: Employee['paymentStatus']) => {
-    const newEmployees = employees.map(emp => {
-      if (emp.id === empId) {
-        return {
-          ...emp,
-          paymentStatus: status,
-          lastPaidDate: status === 'Paid' ? new Date().toLocaleDateString('en-IN', { month: 'short', day: '2-digit', year: 'numeric' }) : undefined
-        };
-      }
-      return emp;
-    });
-    setEmployees(newEmployees);
-    localStorage.setItem('timely_finds_employees', JSON.stringify(newEmployees));
-    saveServerStore('employees', newEmployees);
+  const updateEmployeeStatus = async (empId: string, status: Employee['paymentStatus']) => {
+    try {
+      await updateDoc(doc(db, "employees", empId), { paymentStatus: status });
+    } catch (error) {
+      console.error("Error updating employee status:", error);
+    }
   };
 
   const payAllEmployees = () => {
@@ -661,7 +747,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveServerStore('employees', newEmployees);
   };
 
-  const toggleFavorite = (product: Clock) => {
+  const toggleFavorite = async (product: Clock) => {
     const isFav = favorites.some(fav => fav.id === product.id);
     let newFavorites;
     if (isFav) {
@@ -669,8 +755,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     } else {
       newFavorites = [...favorites, product];
     }
+    
     setFavorites(newFavorites);
     localStorage.setItem('timely_finds_favorites', JSON.stringify(newFavorites));
+
+    // 🚀 SYNC TO FIRESTORE: Persistent across devices
+    if (userEmail && userEmail !== 'Guest') {
+      try {
+        await setDoc(doc(db, "users", userEmail), { favorites: newFavorites }, { merge: true });
+      } catch (error) {
+        console.error("Error syncing favorites:", error);
+      }
+    }
   };
 
   /** Save active user profile to server + localStorage immediately (called on every profile field change) */
@@ -722,10 +818,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     persistUserProfile(userName, userEmail, userPhoto, userAddress, userPhone, bankName);
   };
 
-  const setStoreSettings = (settings: StoreSettings) => {
-    setStoreSettingsState(settings);
-    localStorage.setItem('timely_finds_settings', JSON.stringify(settings));
-    saveServerStore('settings', settings);
+  const setStoreSettings = async (settings: StoreSettings) => {
+    try {
+      await setDoc(doc(db, "settings", "global"), settings);
+    } catch (error) {
+       console.error("Error updating settings:", error);
+    }
   };
 
   const login = (email: string, isAdminUser: boolean = false, isDeliveryUser: boolean = false) => {
@@ -848,22 +946,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const isFavorite = (id: string) => favorites.some(fav => fav.id === id);
 
-  const addRating = (ratingData: Omit<Rating, 'id' | 'date'>) => {
-    // Remove any previous rating by the same user for the same product before adding
-    const filteredRatings = ratings.filter(
-      r => !(r.productId === ratingData.productId && r.userName === ratingData.userName)
-    );
+  const addRating = async (ratingData: Omit<Rating, 'id' | 'date'>) => {
+    const id = `RAT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const newRating: Rating = {
       ...ratingData,
-      id: `RAT-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      id,
       date: new Date().toLocaleDateString('en-IN', {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     };
-    const newRatings = [...filteredRatings, newRating];
-    setRatings(newRatings);
-    localStorage.setItem('timely_finds_ratings', JSON.stringify(newRatings));
-    saveServerStore('ratings', newRatings);
+    try {
+      await setDoc(doc(db, "ratings", id), newRating);
+    } catch (error) {
+       console.error("Error adding rating:", error);
+    }
   };
 
   const getAverageRating = (productId: string) => {
@@ -883,25 +979,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return ratings.find(r => r.productId === productId && r.userName === userName);
   };
 
-  const addTask = (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+  const addTask = async (taskData: Omit<Task, 'id' | 'createdAt'>) => {
+    const id = `TASK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const newTask: Task = {
       ...taskData,
-      id: `TASK-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      id,
       createdAt: new Date().toLocaleDateString('en-IN', {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     };
-    const newTasks = [newTask, ...tasks];
-    setTasks(newTasks);
-    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
-    saveServerStore('tasks', newTasks);
+    try {
+      await setDoc(doc(db, "tasks", id), newTask);
+    } catch (error) {
+       console.error("Error adding task:", error);
+    }
   };
 
-  const updateTaskStatus = (taskId: string, status: Task['status']) => {
-    const newTasks = tasks.map(t => t.id === taskId ? { ...t, status } : t);
-    setTasks(newTasks);
-    localStorage.setItem('timely_finds_tasks', JSON.stringify(newTasks));
-    saveServerStore('tasks', newTasks);
+  const updateTaskStatus = async (taskId: string, status: Task['status']) => {
+    try {
+      await updateDoc(doc(db, "tasks", taskId), { status });
+    } catch (error) {
+       console.error("Error updating task status:", error);
+    }
   };
 
   const updateTask = (task: Task) => {
@@ -918,33 +1017,37 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     saveServerStore('tasks', newTasks);
   };
 
-  const addHelpRequest = (requestData: Omit<HelpRequest, 'id' | 'date' | 'status'>) => {
+  const addHelpRequest = async (requestData: Omit<HelpRequest, 'id' | 'date' | 'status'>) => {
+    const id = `HELP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const newRequest: HelpRequest = {
       ...requestData,
-      id: `HELP-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      id,
       status: 'Pending',
       date: new Date().toLocaleDateString('en-IN', {
         day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
       })
     };
-    const newRequests = [newRequest, ...helpRequests];
-    setHelpRequests(newRequests);
-    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
-    saveServerStore('help', newRequests);
+    try {
+      await setDoc(doc(db, "help", id), newRequest);
+    } catch (error) {
+       console.error("Error adding help request:", error);
+    }
   };
 
-  const updateHelpRequestStatus = (id: string, status: HelpRequest['status']) => {
-    const newRequests = helpRequests.map(h => h.id === id ? { ...h, status } : h);
-    setHelpRequests(newRequests);
-    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
-    saveServerStore('help', newRequests);
+  const updateHelpRequestStatus = async (id: string, status: HelpRequest['status']) => {
+    try {
+      await updateDoc(doc(db, "help", id), { status });
+    } catch (error) {
+       console.error("Error updating help request status:", error);
+    }
   };
 
-  const removeHelpRequest = (id: string) => {
-    const newRequests = helpRequests.filter(h => h.id !== id);
-    setHelpRequests(newRequests);
-    localStorage.setItem('timely_finds_help', JSON.stringify(newRequests));
-    saveServerStore('help', newRequests);
+  const removeHelpRequest = async (id: string) => {
+    try {
+      await updateDoc(doc(db, "help", id), { status: 'Closed' });
+    } catch (error) {
+       console.error("Error closing help request:", error);
+    }
   };
 
   if (!isHydrated) return (

@@ -15,6 +15,7 @@ import { Order } from "@/app/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { emailService } from "@/app/lib/emailService";
 
 const UPI_APPS = [
   { id: 'gpay', name: 'Google Pay', color: '#4285F4', scheme: 'tez://pay', icon: <div className="w-8 h-8 rounded-full border-2 border-[#4285F4] flex items-center justify-center font-bold text-[#4285F4] text-[10px]">G</div>, handles: ['@okicici', '@okaxis', '@oksbi', '@okhdfcbank'] },
@@ -303,9 +304,7 @@ export default function CheckoutPage() {
     
     const newOrder: Order = {
       id: currentOrderId,
-      date: new Date().toLocaleDateString('en-IN', {
-        year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-      }),
+      date: new Date().toISOString(), // Standardized to ISO for global sync
       items: cart,
       total: total,
       status: (paymentMethod === 'COD' || paymentMethod === 'UPI' || paymentMethod === 'Card') ? 'Confirmed' : 'Awaiting Verification',
@@ -323,6 +322,11 @@ export default function CheckoutPage() {
     };
     
     addOrder(newOrder);
+    
+    // 🌐 TRIGGER AUTOMATED EMAIL
+    if (formData.email) {
+      emailService.sendOrderConfirmation(newOrder).catch(e => console.error("Email failed:", e));
+    }
     setStep(3);
     setIsProcessing(false);
     setPaymentStatus('success');
